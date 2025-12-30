@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { db, tableSessions, orders, eq, desc } from "@menumate/db";
 import { SessionsPageClient } from "./sessions-page-client";
 
 export default async function SessionsPage() {
-  const user = await verifyToken();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
@@ -19,7 +19,7 @@ export default async function SessionsPage() {
   const [restaurant] = await db
     .select()
     .from(restaurants)
-    .where(eq(restaurants.ownerId, user.id))
+    .where(eq(restaurants.ownerId, user.userId))
     .limit(1);
 
   if (!restaurant) {

@@ -15,6 +15,8 @@ export default async function AdminDashboard() {
 
   // Get restaurant for owner/staff
   let restaurant = null;
+  let activeSessions: any[] = [];
+  
   if (user.role !== "super_admin") {
     const [restaurantData] = await db
       .select()
@@ -23,6 +25,20 @@ export default async function AdminDashboard() {
       .limit(1);
 
     restaurant = restaurantData;
+
+    // Fetch active sessions for this restaurant
+    if (restaurant) {
+      const { tableSessions, and } = await import("@menumate/db");
+      activeSessions = await db
+        .select()
+        .from(tableSessions)
+        .where(
+          and(
+            eq(tableSessions.restaurantId, restaurant.id),
+            eq(tableSessions.status, "active")
+          )
+        );
+    }
   }
 
   // For super admin: get all restaurants and stats

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LoginForm, RegisterForm, Card } from "@menumate/app";
+import { Card, Button, Input } from "@menumate/app";
 import { UtensilsCrossed } from "lucide-react";
 
 export default function LoginPage() {
@@ -12,7 +12,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (data: { email: string; password: string }) => {
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+
+  // Register form state
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
 
@@ -20,7 +31,7 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
 
       const result = await response.json();
@@ -31,7 +42,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Reset loading state before redirect
       setIsLoading(false);
       const redirect = searchParams.get("redirect") || "/admin";
       router.push(redirect);
@@ -42,12 +52,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleRegister = async (data: {
-    email: string;
-    password: string;
-    fullName: string;
-    restaurantName: string;
-  }) => {
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
 
@@ -55,7 +61,12 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          email: registerEmail,
+          password: registerPassword,
+          fullName,
+          restaurantName,
+        }),
       });
 
       const result = await response.json();
@@ -66,7 +77,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Reset loading state before showing alert and redirecting
       setIsLoading(false);
       alert("Registration successful! Your account is pending approval.");
       router.push("/login");
@@ -100,9 +110,116 @@ export default function LoginPage() {
         )}
 
         {isLogin ? (
-          <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                className="w-full"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                className="w-full"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 text-base font-semibold"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
         ) : (
-          <RegisterForm onSubmit={handleRegister} isLoading={isLoading} />
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-semibold text-slate-700 mb-2">
+                Full Name
+              </label>
+              <Input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="w-full"
+                placeholder="John Doe"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="restaurantName" className="block text-sm font-semibold text-slate-700 mb-2">
+                Restaurant Name
+              </label>
+              <Input
+                id="restaurantName"
+                type="text"
+                value={restaurantName}
+                onChange={(e) => setRestaurantName(e.target.value)}
+                required
+                className="w-full"
+                placeholder="My Restaurant"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="registerEmail" className="block text-sm font-semibold text-slate-700 mb-2">
+                Email
+              </label>
+              <Input
+                id="registerEmail"
+                type="email"
+                value={registerEmail}
+                onChange={(e) => setRegisterEmail(e.target.value)}
+                required
+                className="w-full"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="registerPassword" className="block text-sm font-semibold text-slate-700 mb-2">
+                Password
+              </label>
+              <Input
+                id="registerPassword"
+                type="password"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+                required
+                className="w-full"
+                placeholder="••••••••"
+                minLength={6}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 text-base font-semibold"
+            >
+              {isLoading ? "Creating account..." : "Create Account"}
+            </Button>
+          </form>
         )}
 
         <div className="mt-8 text-center">
@@ -123,5 +240,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-

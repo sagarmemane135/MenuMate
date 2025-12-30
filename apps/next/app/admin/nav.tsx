@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { UtensilsCrossed, LayoutDashboard, Menu, Package, UserCheck, LogOut, X, AlignJustify } from "lucide-react";
+import { UtensilsCrossed, LayoutDashboard, Menu, Package, UserCheck, LogOut, X, AlignJustify, Users } from "lucide-react";
 
 interface AdminNavProps {
   userRole: string;
