@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, uuid, text, timestamp, boolean, integer, decimal, index } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, uuid, text, timestamp, boolean, integer, decimal, index, varchar, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Enum Types
@@ -61,9 +61,15 @@ export const menuItems = pgTable("menu_items", {
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   restaurantId: uuid("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tableNumber: integer("table_number").notNull(),
-  status: orderStatusEnum("status").default("pending").notNull(),
+  customerName: varchar("customer_name", { length: 100 }).notNull(),
+  customerPhone: varchar("customer_phone", { length: 15 }).notNull(),
+  tableNumber: varchar("table_number", { length: 20 }),
+  items: jsonb("items").notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  status: orderStatusEnum("status").default("pending").notNull(),
+  notes: text("notes"),
+  paymentId: varchar("payment_id", { length: 100 }),
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   restaurantIdx: index("orders_restaurant_idx").on(table.restaurantId),
