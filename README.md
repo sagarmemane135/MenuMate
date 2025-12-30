@@ -50,8 +50,8 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/menumate.git
-   cd menumate
+   git clone https://github.com/sagarmemane135/MenuMate.git
+   cd MenuMate
    ```
 
 2. **Install dependencies**
