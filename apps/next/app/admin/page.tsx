@@ -236,7 +236,7 @@ export default async function AdminDashboard() {
           </Card>
         </div>
       ) : (
-        <DashboardClient restaurant={restaurant} userEmail={user.email} />
+        <DashboardClient restaurant={restaurant} userEmail={user.email} activeSessions={activeSessions} />
       )}
     </div>
   );

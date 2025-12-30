@@ -1,5 +1,5 @@
 import { db, restaurants, categories, menuItems, eq } from "@menumate/db";
-import { MenuDisplayWithCart } from "@menumate/app";
+import { MenuWithSession } from "./menu-with-session";
 import { notFound } from "next/navigation";
 
 export default async function RestaurantMenuPage({
@@ -33,7 +33,7 @@ export default async function RestaurantMenuPage({
     .where(eq(menuItems.restaurantId, restaurant.id));
 
   return (
-    <MenuDisplayWithCart
+    <MenuWithSession
       restaurant={{
         name: restaurant.name,
         slug: restaurant.slug,

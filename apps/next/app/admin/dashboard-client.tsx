@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, Button } from "@menumate/app";
 import { EditRestaurantForm } from "./edit-restaurant-form";
-import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2 } from "lucide-react";
+import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2, Users } from "lucide-react";
 
 interface DashboardClientProps {
   restaurant: {
@@ -13,9 +13,15 @@ interface DashboardClientProps {
     isActive: boolean;
   } | null;
   userEmail: string;
+  activeSessions: Array<{
+    id: string;
+    tableNumber: string;
+    sessionToken: string;
+    startedAt: Date;
+  }>;
 }
 
-export function DashboardClient({ restaurant, userEmail }: DashboardClientProps) {
+export function DashboardClient({ restaurant, userEmail, activeSessions }: DashboardClientProps) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [restaurantData, setRestaurantData] = useState(restaurant);
   const [qrCode, setQrCode] = useState<string | null>(null);

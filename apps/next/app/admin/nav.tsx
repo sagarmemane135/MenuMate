@@ -33,6 +33,12 @@ export function AdminNav({ userRole, userEmail }: AdminNavProps) {
       roles: ["owner"]
     },
     {
+      href: "/admin/sessions",
+      label: "Sessions",
+      icon: Users,
+      roles: ["owner"]
+    },
+    {
       href: "/admin/super",
       label: "User Approvals",
       icon: UserCheck,

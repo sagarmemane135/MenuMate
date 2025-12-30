@@ -93,10 +93,22 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
                       {order.status.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">Table: {order.tableNumber}</p>
+                  <p className="text-sm text-gray-600">
+                    Table: {order.tableNumber}
+                    {order.sessionId && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                        Session
+                      </span>
+                    )}
+                  </p>
                   <p className="text-sm text-gray-600" suppressHydrationWarning>
                     Created: {new Date(order.createdAt).toLocaleString()}
                   </p>
+                  {!order.isPaid && order.sessionId && (
+                    <p className="text-xs text-orange-600 font-semibold mt-1">
+                      ⏳ Pending payment (part of active session)
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
