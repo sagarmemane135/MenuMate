@@ -26,16 +26,21 @@ export function DashboardClient({ restaurant, userEmail }: DashboardClientProps)
     setShowEditForm(false);
   };
 
-  const menuUrl = restaurantData 
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurantData.slug}`
-    : '';
+  const [menuUrl, setMenuUrl] = useState('');
 
-  // Generate QR code on mount
+  // Set menu URL on client side only to avoid hydration mismatch
   useEffect(() => {
-    if (restaurantData && !qrCode) {
-      generateQRCode();
+    if (restaurantData) {
+      setMenuUrl(`${window.location.origin}/r/${restaurantData.slug}`);
     }
   }, [restaurantData]);
+
+  // Generate QR code when menuUrl is ready
+  useEffect(() => {
+    if (menuUrl && !qrCode) {
+      generateQRCode();
+    }
+  }, [menuUrl]);
 
   const generateQRCode = async () => {
     if (!restaurantData) return;
@@ -124,14 +129,16 @@ export function DashboardClient({ restaurant, userEmail }: DashboardClientProps)
               </span>
             </div>
 
-            <a
-              href={menuUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
-            >
-              View Public Menu →
-            </a>
+            {menuUrl && (
+              <a
+                href={menuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
+              >
+                View Public Menu →
+              </a>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">

@@ -131,7 +131,7 @@ export default async function SuperAdminPage() {
                         </span>
                       </p>
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500" suppressHydrationWarning>
                       <span className="font-semibold">Requested:</span>{" "}
                       {new Date(pendingUser.createdAt).toLocaleString()}
                     </p>

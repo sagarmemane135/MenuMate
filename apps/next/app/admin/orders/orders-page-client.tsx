@@ -94,7 +94,7 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">Table: {order.tableNumber}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600" suppressHydrationWarning>
                     Created: {new Date(order.createdAt).toLocaleString()}
                   </p>
                 </div>

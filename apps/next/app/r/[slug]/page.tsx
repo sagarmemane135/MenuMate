@@ -1,5 +1,5 @@
 import { db, restaurants, categories, menuItems, eq } from "@menumate/db";
-import { MenuDisplay } from "@menumate/app";
+import { MenuDisplayWithCart } from "@menumate/app";
 import { notFound } from "next/navigation";
 
 export default async function RestaurantMenuPage({
@@ -32,24 +32,29 @@ export default async function RestaurantMenuPage({
     .from(menuItems)
     .where(eq(menuItems.restaurantId, restaurant.id));
 
-  const categoriesWithItems = allCategories.map((category) => ({
-    id: category.id,
-    name: category.name,
-    sortOrder: category.sortOrder,
-    menuItems: allMenuItems
-      .filter((item) => item.categoryId === category.id)
-      .map((item) => ({
+  return (
+    <MenuDisplayWithCart
+      restaurant={{
+        name: restaurant.name,
+        slug: restaurant.slug,
+        isActive: restaurant.isActive,
+      }}
+      categories={allCategories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        sortOrder: cat.sortOrder,
+      }))}
+      menuItems={allMenuItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
-        price: item.price,
+        price: Number(item.price),
         imageUrl: item.imageUrl,
-        isAvailable: item.isAvailable,
-      })),
-  }));
-
-  return (
-    <MenuDisplay restaurantName={restaurant.name} categories={categoriesWithItems} />
+        available: item.isAvailable,
+        categoryId: item.categoryId,
+        sortOrder: item.sortOrder,
+      }))}
+    />
   );
 }
 
