@@ -1,0 +1,24 @@
+{
+  "name": "@menumate/db",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "migrate": "drizzle-kit push:pg",
+    "generate": "drizzle-kit generate:pg",
+    "studio": "drizzle-kit studio",
+    "create-super-admin": "tsx scripts/create-super-admin.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.29.3",
+    "postgres": "^3.4.3",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "@types/bcryptjs": "^2.4.6",
+    "drizzle-kit": "^0.20.15",
+    "tsx": "^4.7.0"
+  }
+}
+

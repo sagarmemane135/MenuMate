@@ -1,0 +1,11 @@
+!.env.example
+!.env.local.example
+!.env.development.example
+!.env.production.example
+!.env.test.example
+!.env.test.local.example
+!.env.test.production.example
+!.env.test.development.example
+!.env.test.local.production.example
+!.env.test.local.development.example
+!.env
