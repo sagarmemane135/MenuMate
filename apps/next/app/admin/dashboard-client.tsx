@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, Button } from "@menumate/app";
 import { EditRestaurantForm } from "./edit-restaurant-form";
-import { UtensilsCrossed, Edit, Menu, Package, ExternalLink } from "lucide-react";
+import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2 } from "lucide-react";
 
 interface DashboardClientProps {
   restaurant: {
@@ -18,15 +18,64 @@ interface DashboardClientProps {
 export function DashboardClient({ restaurant, userEmail }: DashboardClientProps) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [restaurantData, setRestaurantData] = useState(restaurant);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
 
   const handleRestaurantUpdated = (updated: typeof restaurant) => {
     setRestaurantData(updated);
     setShowEditForm(false);
   };
 
+  const menuUrl = restaurantData 
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurantData.slug}`
+    : '';
+
+  // Generate QR code on mount
+  useEffect(() => {
+    if (restaurantData && !qrCode) {
+      generateQRCode();
+    }
+  }, [restaurantData]);
+
+  const generateQRCode = async () => {
+    if (!restaurantData) return;
+    
+    setIsGeneratingQR(true);
+    try {
+      const response = await fetch("/api/qr-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: menuUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setQrCode(data.qrCode);
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
+
+  const downloadQRCode = () => {
+    if (!qrCode || !restaurantData) return;
+
+    const link = document.createElement("a");
+    link.download = `${restaurantData.slug}-qr-code.png`;
+    link.href = qrCode;
+    link.click();
+  };
+
+  const copyMenuLink = () => {
+    navigator.clipboard.writeText(menuUrl);
+    alert("Menu link copied to clipboard!");
+  };
+
   if (showEditForm && restaurantData) {
     return (
-      <div>
+      <div className="max-w-2xl">
         <EditRestaurantForm
           restaurant={restaurantData}
           onSuccess={handleRestaurantUpdated}
@@ -39,103 +88,155 @@ export function DashboardClient({ restaurant, userEmail }: DashboardClientProps)
   return (
     <div className="space-y-6">
       {/* Restaurant Card */}
-      <Card className="overflow-hidden">
+      <Card>
         {restaurantData ? (
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                  <UtensilsCrossed className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2 break-words">
-                    {restaurantData.name}
-                  </h2>
-                  <p className="text-sm text-slate-600 font-mono bg-slate-100 px-3 py-1.5 rounded-lg inline-block">
+          <div>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start space-x-3">
+                <UtensilsCrossed className="w-10 h-10 text-orange-500 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">{restaurantData.name}</p>
+                  <p className="text-sm text-gray-600 font-mono bg-gray-100 px-3 py-1 rounded-lg inline-block">
                     /{restaurantData.slug}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Status</p>
-                <span
-                  className={`inline-flex items-center px-3 py-1.5 text-sm font-bold rounded-full ${
-                    restaurantData.isActive 
-                      ? "bg-green-100 text-green-700" 
-                      : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full mr-2 ${
-                    restaurantData.isActive ? "bg-green-500" : "bg-red-500"
-                  }`}></span>
-                  {restaurantData.isActive ? "Active" : "Inactive"}
-                </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEditForm(true)}
-                className="flex items-center space-x-1"
               >
-                <Edit className="w-4 h-4" />
-                <span>Edit</span>
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
               </Button>
+            </div>
+            
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-sm font-semibold text-gray-600">Status:</span>
+              <span
+                className={`px-3 py-1 text-sm font-bold rounded-full ${
+                  restaurantData.isActive 
+                    ? "bg-green-100 text-green-700" 
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {restaurantData.isActive ? "● Active" : "● Inactive"}
+              </span>
             </div>
 
             <a
-              href={`/r/${restaurantData.slug}`}
+              href={menuUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center space-x-2 w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
+              className="mt-4 inline-flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
             >
-              <ExternalLink className="w-5 h-5" />
-              <span>View Public Menu</span>
+              View Public Menu →
             </a>
           </div>
         ) : (
-          <div className="text-center py-12">
-            <UtensilsCrossed className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 font-medium">No restaurant found</p>
+          <div className="text-center py-8">
+            <UtensilsCrossed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">No restaurant found</p>
           </div>
         )}
       </Card>
 
-      {/* Quick Actions Card */}
-      <Card>
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <a
-              href="/admin/menu"
-              className="flex items-center space-x-4 p-4 bg-gradient-to-r from-orange-50 to-orange-100/50 border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:shadow-md transition-all group"
-            >
-              <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                <Menu className="w-6 h-6 text-orange-500" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-900">Manage Menu</p>
-                <p className="text-xs text-slate-600">Add & edit items</p>
-              </div>
-              <ExternalLink className="w-5 h-5 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </a>
+      {/* QR Code Section */}
+      {restaurantData && (
+        <Card title="QR Code for Customers">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* QR Code Display */}
+            <div className="flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-xl p-6">
+              {isGeneratingQR ? (
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-gray-600">Generating QR Code...</p>
+                </div>
+              ) : qrCode ? (
+                <>
+                  <div className="bg-white p-4 rounded-xl shadow-lg mb-4">
+                    <img src={qrCode} alt="Restaurant QR Code" className="w-64 h-64" />
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">
+                    Scan to view menu
+                  </p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center space-y-3">
+                  <QrCode className="w-16 h-16 text-gray-400" />
+                  <p className="text-sm text-gray-600">No QR code generated</p>
+                </div>
+              )}
+            </div>
 
-            <a
-              href="/admin/orders"
-              className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all group"
-            >
-              <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                <Package className="w-6 h-6 text-blue-500" />
+            {/* Actions */}
+            <div className="flex flex-col justify-center space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Share Your Menu
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Print this QR code and place it on your tables. Customers can scan it to view your menu instantly.
+                </p>
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-900">View Orders</p>
-                <p className="text-xs text-slate-600">Manage orders</p>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={downloadQRCode}
+                  disabled={!qrCode}
+                  className="w-full"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download QR Code
+                </Button>
+
+                <Button
+                  onClick={copyMenuLink}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Copy Menu Link
+                </Button>
+
+                <Button
+                  onClick={generateQRCode}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isGeneratingQR}
+                >
+                  <QrCode className="w-5 h-5 mr-2" />
+                  Regenerate QR Code
+                </Button>
               </div>
-              <ExternalLink className="w-5 h-5 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </a>
+
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-800 font-medium">
+                  💡 <strong>Pro Tip:</strong> Print multiple QR codes and place them on each table for best results!
+                </p>
+              </div>
+            </div>
           </div>
+        </Card>
+      )}
+
+      {/* Quick Actions Card */}
+      <Card title="Quick Actions">
+        <div className="space-y-3">
+          <a
+            href="/admin/menu"
+            className="flex items-center space-x-3 p-3 bg-gradient-to-r from-orange-50 to-white border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:shadow-md transition-all"
+          >
+            <Menu className="w-5 h-5 text-orange-500 flex-shrink-0" />
+            <span className="font-semibold text-gray-900">Manage Menu →</span>
+          </a>
+          <a
+            href="/admin/orders"
+            className="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all"
+          >
+            <Package className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            <span className="font-semibold text-gray-900">View Orders →</span>
+          </a>
         </div>
       </Card>
     </div>
