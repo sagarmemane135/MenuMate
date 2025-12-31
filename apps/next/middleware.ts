@@ -7,9 +7,8 @@ export async function middleware(request: NextRequest) {
 
   // Protect /admin/* routes
   if (pathname.startsWith("/admin")) {
-    const token = request.cookies.get(
-      process.env.COOKIE_NAME || "menumate_session"
-    )?.value;
+    const cookieName = (process.env.COOKIE_NAME || "menumate_session").trim();
+    const token = request.cookies.get(cookieName)?.value;
 
     if (!token) {
       const loginUrl = new URL("/login", request.url);

@@ -2,19 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@menumate/app";
+import { useCart, useToast } from "@menumate/app";
 import { Button, Input } from "@menumate/app";
 import { ShoppingCart, User, Phone, Hash, FileText, ArrowLeft, CheckCircle2, CreditCard } from "lucide-react";
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+import type { RazorpayCheckoutOptions, RazorpayPaymentResponse } from "@/lib/types/razorpay";
 
 export default function CheckoutWithPayment() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
@@ -80,15 +76,15 @@ export default function CheckoutWithPayment() {
       }
 
       // Initialize Razorpay checkout
-      const options = {
-        key: "rzp_test_RxnlojQNZtfZj0", // Your Razorpay key
+      const options: RazorpayCheckoutOptions = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RxnlojQNZtfZj0",
         amount: data.order.amount,
         currency: data.order.currency,
         name: "MenuMate",
         description: `Order #${orderId.slice(0, 8).toUpperCase()}`,
-        image: "/logo.png", // Optional: Add your logo
+        image: "/logo.png",
         order_id: data.order.id,
-        handler: async function (response: any) {
+        handler: async function (response: RazorpayPaymentResponse) {
           // Payment successful - verify on backend
           try {
             const verifyResponse = await fetch("/api/payment/verify", {
@@ -113,7 +109,7 @@ export default function CheckoutWithPayment() {
             }
           } catch (error) {
             console.error("Payment verification error:", error);
-            alert("Payment verification failed. Please contact support.");
+            showToast("Payment verification failed. Please contact support.", "error");
           }
         },
         prefill: {
@@ -121,7 +117,7 @@ export default function CheckoutWithPayment() {
           contact: formData.customerPhone,
         },
         notes: {
-          restaurant_slug: restaurantSlug,
+          restaurant_slug: restaurantSlug || "",
           table_number: formData.tableNumber || "N/A",
         },
         theme: {
@@ -130,7 +126,7 @@ export default function CheckoutWithPayment() {
         modal: {
           ondismiss: function () {
             setIsLoading(false);
-            alert("Payment cancelled. Your order was not placed.");
+            showToast("Payment cancelled. Your order was not placed.", "warning");
           },
         },
       };
@@ -139,7 +135,10 @@ export default function CheckoutWithPayment() {
       razorpay.open();
     } catch (error) {
       console.error("Payment error:", error);
-      alert(error instanceof Error ? error.message : "Failed to initialize payment");
+      showToast(
+        error instanceof Error ? error.message : "Failed to initialize payment",
+        "error"
+      );
       setIsLoading(false);
     }
   };
@@ -176,7 +175,10 @@ export default function CheckoutWithPayment() {
       await handlePayment(data.order.id, data.order.totalAmount);
     } catch (error) {
       console.error("Order error:", error);
-      alert(error instanceof Error ? error.message : "Failed to place order");
+      showToast(
+        error instanceof Error ? error.message : "Failed to place order",
+        "error"
+      );
       setIsLoading(false);
     }
   };

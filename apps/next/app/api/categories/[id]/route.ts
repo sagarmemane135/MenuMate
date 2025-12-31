@@ -10,9 +10,10 @@ const updateCategorySchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
     
     if (!user) {
@@ -47,7 +48,7 @@ export async function PATCH(
     const [category] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, params.id))
+      .where(eq(categories.id, id))
       .limit(1);
 
     if (!category || category.restaurantId !== restaurant.id) {
@@ -67,7 +68,7 @@ export async function PATCH(
     const [updatedCategory] = await db
       .update(categories)
       .set(updateData)
-      .where(eq(categories.id, params.id))
+      .where(eq(categories.id, id))
       .returning();
 
     return NextResponse.json({
@@ -92,9 +93,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
     
     if (!user) {
@@ -129,7 +131,7 @@ export async function DELETE(
     const [category] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, params.id))
+      .where(eq(categories.id, id))
       .limit(1);
 
     if (!category || category.restaurantId !== restaurant.id) {
@@ -141,7 +143,7 @@ export async function DELETE(
 
     await db
       .delete(categories)
-      .where(eq(categories.id, params.id));
+      .where(eq(categories.id, id));
 
     return NextResponse.json({
       message: "Category deleted successfully",

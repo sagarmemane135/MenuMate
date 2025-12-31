@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Button } from "@menumate/app";
+import { Button, useToast } from "@menumate/app";
 import { Receipt, CreditCard, Store, Users, ArrowLeft, Loader2 } from "lucide-react";
+import type { RazorpayPaymentResponse, RazorpayCheckoutOptions } from "@/lib/types/razorpay";
 
 interface OrderItem {
   itemId: string;
@@ -31,9 +32,10 @@ interface Session {
   startedAt: string;
 }
 
-export default function BillPage() {
+function BillPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const sessionToken = searchParams.get("session");
 
   const [session, setSession] = useState<Session | null>(null);
@@ -89,6 +91,8 @@ export default function BillPage() {
         throw new Error(data.error || "Failed to create payment");
       }
 
+      showToast("Opening payment gateway...", "info");
+
       // Initialize Razorpay
       const options = {
         key: "rzp_test_RxnlojQNZtfZj0",
@@ -110,7 +114,10 @@ export default function BillPage() {
       razorpay.open();
     } catch (error) {
       console.error("Payment error:", error);
-      alert(error instanceof Error ? error.message : "Failed to process payment");
+      showToast(
+        error instanceof Error ? error.message : "Failed to process payment",
+        "error"
+      );
     } finally {
       setIsProcessingPayment(false);
     }
@@ -119,8 +126,9 @@ export default function BillPage() {
   const handlePayAtCounter = async () => {
     if (!sessionToken) return;
 
-    const confirmed = confirm("Mark this bill as 'Pay at Counter'?");
-    if (!confirmed) return;
+    // Use toast for confirmation instead of confirm dialog
+    // For now, proceed directly (can add confirmation dialog component later)
+    showToast("Processing payment at counter...", "info");
 
     await closeSession("counter");
   };
@@ -141,21 +149,26 @@ export default function BillPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert(
+        showToast(
           paymentMethod === "online"
-            ? "✅ Payment successful! Thank you!"
-            : "✅ Please pay at the counter. Thank you!"
+            ? "Payment successful! Thank you!"
+            : "Please pay at the counter. Thank you!",
+          "success"
         );
         
         // Clear session from localStorage
-        localStorage.removeItem(`session_${sessionToken}`);
+        if (sessionToken) {
+          localStorage.removeItem(`session_${sessionToken}`);
+        }
         
-        // Redirect back to menu
-        router.push("/");
+        // Redirect back to menu after showing success message
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
       }
     } catch (error) {
       console.error("Failed to close session:", error);
-      alert("Failed to process. Please try again.");
+      showToast("Failed to process. Please try again.", "error");
     }
   };
 
@@ -338,6 +351,21 @@ export default function BillPage() {
       {/* Load Razorpay Script */}
       <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
     </div>
+  );
+}
+
+export default function BillPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <BillPageContent />
+    </Suspense>
   );
 }
 

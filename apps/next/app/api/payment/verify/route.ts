@@ -1,7 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { verifyPaymentSignature } from "@/lib/razorpay";
 import { db, orders, eq } from "@menumate/db";
 import { z } from "zod";
+import {
+  successResponse,
+  errorResponse,
+  validationErrorResponse,
+  notFoundResponse,
+  internalErrorResponse,
+} from "@/lib/api-response";
 
 const verifyPaymentSchema = z.object({
   razorpay_order_id: z.string(),
@@ -23,10 +30,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: "Invalid payment signature" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid payment signature", 400);
     }
 
     // Update order status to paid
@@ -41,34 +45,24 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!updatedOrder) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Order not found");
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Payment verified successfully",
-      order: {
+    return successResponse(
+      {
         id: updatedOrder.id,
         status: updatedOrder.status,
         paymentStatus: updatedOrder.paymentStatus,
       },
-    });
+      "Payment verified successfully"
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
-        { status: 400 }
-      );
+      return validationErrorResponse(error.errors);
     }
 
     console.error("Payment verification error:", error);
-    return NextResponse.json(
-      { error: "Failed to verify payment" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Failed to verify payment");
   }
 }
 

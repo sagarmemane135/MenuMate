@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Button } from "@menumate/app";
+import { Card, Button, useToast } from "@menumate/app";
 
 interface Order {
   id: string;
-  tableNumber: number;
+  tableNumber: string | null;
   status: "pending" | "cooking" | "ready" | "paid" | "cancelled";
   totalAmount: string;
   createdAt: Date | string;
+  sessionId: string | null;
+  isPaid: boolean;
 }
 
 interface OrdersPageClientProps {
@@ -34,6 +36,7 @@ const statusOptions: Array<{ value: Order["status"]; label: string }> = [
 export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingOrderId(orderId);

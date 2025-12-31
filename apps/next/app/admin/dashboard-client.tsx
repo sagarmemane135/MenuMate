@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Button } from "@menumate/app";
+import { Card, Button, useToast } from "@menumate/app";
 import { EditRestaurantForm } from "./edit-restaurant-form";
 import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2, Users } from "lucide-react";
 
@@ -26,6 +26,7 @@ export function DashboardClient({ restaurant, userEmail, activeSessions }: Dashb
   const [restaurantData, setRestaurantData] = useState(restaurant);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const { showToast } = useToast();
 
   const handleRestaurantUpdated = (updated: typeof restaurant) => {
     setRestaurantData(updated);
@@ -81,7 +82,7 @@ export function DashboardClient({ restaurant, userEmail, activeSessions }: Dashb
 
   const copyMenuLink = () => {
     navigator.clipboard.writeText(menuUrl);
-    alert("Menu link copied to clipboard!");
+    showToast("Menu link copied to clipboard!", "success");
   };
 
   if (showEditForm && restaurantData) {

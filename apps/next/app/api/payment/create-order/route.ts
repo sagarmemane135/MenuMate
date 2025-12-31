@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { razorpay } from "@/lib/razorpay";
 import { z } from "zod";
+import {
+  successResponse,
+  errorResponse,
+  validationErrorResponse,
+  internalErrorResponse,
+} from "@/lib/api-response";
 
 const createOrderSchema = z.object({
   amount: z.number().positive(),
@@ -26,28 +32,19 @@ export async function POST(request: NextRequest) {
       notes: validatedData.notes,
     });
 
-    return NextResponse.json({
-      success: true,
-      order: {
-        id: razorpayOrder.id,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        receipt: razorpayOrder.receipt,
-      },
+    return successResponse({
+      id: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      receipt: razorpayOrder.receipt,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
-        { status: 400 }
-      );
+      return validationErrorResponse(error.errors);
     }
 
     console.error("Razorpay order creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to create payment order" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Failed to create payment order");
   }
 }
 

@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db, orders, menuItems, restaurants, tableSessions, eq } from "@menumate/db";
 import { z } from "zod";
+import {
+  createdResponse,
+  errorResponse,
+  validationErrorResponse,
+  internalErrorResponse,
+} from "@/lib/api-response";
 
 const createOrderSchema = z.object({
   sessionToken: z.string(),
@@ -28,10 +34,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!session || session.status !== "active") {
-      return NextResponse.json(
-        { error: "Invalid or closed session" },
-        { status: 400 }
-      );
+      return errorResponse("Invalid or closed session", 400);
     }
 
     // Validate menu items and calculate total
@@ -51,17 +54,11 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (!menuItem || !menuItem.isAvailable) {
-        return NextResponse.json(
-          { error: `Item ${item.itemId} not available` },
-          { status: 400 }
-        );
+        return errorResponse(`Item ${item.itemId} not available`, 400);
       }
 
       if (menuItem.restaurantId !== session.restaurantId) {
-        return NextResponse.json(
-          { error: "Invalid menu item for this restaurant" },
-          { status: 400 }
-        );
+        return errorResponse("Invalid menu item for this restaurant", 400);
       }
 
       const itemTotal = Number(menuItem.price) * item.quantity;
@@ -85,7 +82,7 @@ export async function POST(request: NextRequest) {
         customerPhone: validatedData.customerPhone,
         tableNumber: session.tableNumber,
         items: orderItemsData,
-        totalAmount,
+        totalAmount: totalAmount.toString(),
         status: "pending",
         isPaid: false,
         paymentStatus: "pending",
@@ -93,33 +90,24 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json(
+    return createdResponse(
       {
-        success: true,
-        order: {
-          id: newOrder.id,
-          items: newOrder.items,
-          totalAmount: newOrder.totalAmount,
-          status: newOrder.status,
-          isPaid: newOrder.isPaid,
-          createdAt: newOrder.createdAt,
-        },
+        id: newOrder.id,
+        items: newOrder.items,
+        totalAmount: newOrder.totalAmount,
+        status: newOrder.status,
+        isPaid: newOrder.isPaid,
+        createdAt: newOrder.createdAt,
       },
-      { status: 201 }
+      "Order created successfully"
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
-        { status: 400 }
-      );
+      return validationErrorResponse(error.errors);
     }
 
     console.error("Order creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to create order" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Failed to create order");
   }
 }
 

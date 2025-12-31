@@ -12,3 +12,4 @@ yarn migrate
 echo "Migration complete!"
 
 
+

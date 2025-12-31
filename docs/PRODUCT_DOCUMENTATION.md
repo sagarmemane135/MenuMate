@@ -207,12 +207,15 @@ MenuMate2/
 3. **categories** - Menu categories
 4. **menu_items** - Menu items/dishes
 5. **orders** - Order transactions
+6. **table_sessions** - Table session management (Phase 5A)
 
 **Key Relationships:**
 - Users → Restaurants (one-to-many)
 - Restaurants → Categories (one-to-many)
 - Categories → Menu Items (one-to-many)
 - Restaurants → Orders (one-to-many)
+- Restaurants → Table Sessions (one-to-many)
+- Table Sessions → Orders (one-to-many)
 
 ### 4.4 Security Features
 
@@ -229,25 +232,44 @@ MenuMate2/
 
 ## 5. Features Roadmap
 
-### 🚧 Phase 2 - Essential Features (Next 2-3 Months)
+### ✅ Phase 2 - Essential Features (COMPLETE)
 
 #### 5.1 Customer-Facing Features
-- [ ] **QR Code Generation** for each restaurant
+- [x] **QR Code Generation** for each restaurant
+- [x] **Place Order** directly from customer menu
+- [x] **Add to Cart** functionality
+- [x] **Cart Management** (add, remove, update quantity)
+- [x] **Table-wise order management**
+- [x] **Bill/Invoice Generation** (consolidated per session)
 - [ ] **Call Waiter** button on menu
-- [ ] **Place Order** directly from customer menu
-- [ ] **Order Status Tracking** for customers
-- [ ] **Bill/Invoice Generation**
-- [ ] **Table-wise order management**
 - [ ] **Search functionality** in menu
 - [ ] **Category filters** on public menu
 
 #### 5.2 Payment Integration
-- [ ] **Razorpay Integration** (India)
-- [ ] **Stripe Integration** (International)
-- [ ] **Cash payment option**
+- [x] **Razorpay Integration** (India)
+- [x] **Online payment processing**
+- [x] **Cash payment option** ("Pay at Counter")
+- [x] **Payment success/failure handling**
+- [x] **Payment signature verification**
+- [x] **Payment status tracking**
 - [ ] **Split bill functionality**
 - [ ] **Payment receipts via email**
 - [ ] **Payment analytics**
+
+### ✅ Phase 5A - Session-Based Ordering (COMPLETE)
+
+#### 5.5 Session Management
+- [x] **Table Session Creation** - Automatic session on QR scan
+- [x] **Session Token System** - Unique token per table session
+- [x] **Multiple Orders per Session** - Order multiple times, pay once
+- [x] **Session Status Tracking** - Active/Closed/Paid states
+- [x] **Payment Method Tracking** - Online/Counter/Pending
+- [x] **Session Management Dashboard** - View all sessions for restaurant
+- [x] **Bill Consolidation** - View all orders in a session
+- [x] **"Send to Kitchen"** - Order without immediate payment
+- [x] **"View Bill"** - Consolidated bill page
+
+**Flow:** Customer scans QR → Session created → Order multiple times → View consolidated bill → Pay once at end
 
 #### 5.3 Advanced Menu Features
 - [ ] **Bulk item upload** (CSV/Excel)

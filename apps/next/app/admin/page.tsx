@@ -42,8 +42,20 @@ export default async function AdminDashboard() {
   }
 
   // For super admin: get all restaurants and stats
-  let allRestaurants = [];
-  let stats = null;
+  let allRestaurants: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    isActive: boolean;
+    ownerId: string;
+  }> = [];
+  let stats: {
+    totalRestaurantAdmins: number;
+    approvedRestaurantAdmins: number;
+    pendingRestaurantAdmins: number;
+    totalRestaurants: number;
+    activeRestaurants: number;
+  } | null = null;
   if (user.role === "super_admin") {
     const restaurantsList = await db
       .select({

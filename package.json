@@ -11,9 +11,11 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "create-admin": "tsx scripts/create-super-admin.ts"
   },
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "prettier": "^3.2.5",
     "turbo": "^2.0.0",
     "typescript": "^5.3.3"
@@ -23,4 +25,3 @@
     "node": ">=18.0.0"
   }
 }
-

@@ -25,7 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Fetch user on mount
-    fetch("/api/user/me")
+    fetch("/api/user/me", {
+      credentials: "include", // Important: Include cookies in request
+    })
       .then((res) => {
         if (res.ok) {
           return res.json();
@@ -47,7 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { 
+        method: "POST",
+        credentials: "include", // Important: Include cookies in request
+      });
     } catch (error) {
       // Ignore errors
     } finally {
@@ -70,5 +75,6 @@ export function useAuth() {
   }
   return context;
 }
+
 
 

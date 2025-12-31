@@ -12,6 +12,7 @@
   "dependencies": {
     "@menumate/app": "*",
     "@menumate/db": "*",
+    "@supabase/supabase-js": "^2.89.0",
     "@types/qrcode": "^1.5.6",
     "bcryptjs": "^2.4.3",
     "cookies-next": "^5.0.0",

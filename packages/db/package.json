@@ -6,8 +6,7 @@
   "scripts": {
     "migrate": "drizzle-kit push:pg",
     "generate": "drizzle-kit generate:pg",
-    "studio": "drizzle-kit studio",
-    "create-super-admin": "tsx scripts/create-super-admin.ts"
+    "studio": "drizzle-kit studio"
   },
   "dependencies": {
     "drizzle-orm": "^0.29.3",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, Button } from "@menumate/app";
+import { useToast } from "@menumate/app";
 import { AddCategoryForm } from "./add-category-form";
 import { AddMenuItemForm } from "./add-menu-item-form";
 import { EditMenuItemForm } from "./edit-menu-item-form";
@@ -33,6 +34,7 @@ export function MenuPageClient({
   initialCategories,
 }: MenuPageClientProps) {
   const [categories, setCategories] = useState(initialCategories);
+  const { showToast } = useToast();
   const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
   const [showAddItemForm, setShowAddItemForm] = useState<{ categoryId: string; categoryName: string } | null>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -143,7 +145,8 @@ export function MenuPageClient({
   };
 
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}"? This will also delete all items in this category.`)) {
+    // Use window.confirm for now (can be replaced with custom modal later)
+    if (!window.confirm(`Are you sure you want to delete "${categoryName}"? This will also delete all items in this category.`)) {
       return;
     }
 
@@ -155,13 +158,14 @@ export function MenuPageClient({
       if (response.ok) {
         // Remove category from state
         setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+        showToast(`Category "${categoryName}" deleted successfully`, "success");
       } else {
         const result = await response.json();
-        alert(result.error || "Failed to delete category");
+        showToast(result.error || "Failed to delete category", "error");
       }
     } catch (error) {
       console.error("Failed to delete category:", error);
-      alert("An error occurred while deleting the category");
+      showToast("An error occurred while deleting the category", "error");
     }
   };
 

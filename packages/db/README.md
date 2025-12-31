@@ -44,6 +44,13 @@ The schema includes:
 - `categories` - Menu categories
 - `menu_items` - Menu items/products
 - `orders` - Order transactions
+- `table_sessions` - Table session management (for session-based ordering)
+
+**Key Features:**
+- Session-based ordering allows multiple orders per table session
+- Orders can be linked to a session via `sessionId`
+- Sessions track payment status and method (online/counter)
+- Supports realistic restaurant flow: order multiple times, pay once at end
 
 See `src/schema.ts` for full schema definition.
 

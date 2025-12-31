@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db, users, eq } from "@menumate/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const payload = await getCurrentUser();
+    // Pass request to getCurrentUser so it can read cookies from API route
+    const payload = await getCurrentUser(request);
     
     if (!payload) {
       return NextResponse.json(
@@ -33,7 +34,7 @@ export async function GET() {
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Get user error:", error);

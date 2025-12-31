@@ -1,4 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import {
+  successResponse,
+  errorResponse,
+  validationErrorResponse,
+  notFoundResponse,
+  internalErrorResponse,
+} from "@/lib/api-response";
 import { z } from "zod";
 import { db, orders, restaurants, eq } from "@menumate/db";
 import { getCurrentUser } from "@/lib/auth";
@@ -9,23 +16,18 @@ const updateOrderSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser();
     
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return errorResponse("Unauthorized", 401);
     }
 
     if (user.role === "super_admin") {
-      return NextResponse.json(
-        { error: "Super admins cannot update orders" },
-        { status: 403 }
-      );
+      return errorResponse("Super admins cannot update orders", 403);
     }
 
     // Get user's restaurant
@@ -36,24 +38,18 @@ export async function PATCH(
       .limit(1);
 
     if (!restaurant) {
-      return NextResponse.json(
-        { error: "Restaurant not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Restaurant not found");
     }
 
     // Verify order belongs to user's restaurant
     const [order] = await db
       .select()
       .from(orders)
-      .where(eq(orders.id, params.id))
+      .where(eq(orders.id, id))
       .limit(1);
 
     if (!order || order.restaurantId !== restaurant.id) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      );
+      return notFoundResponse("Order not found");
     }
 
     const body = await request.json();
@@ -62,26 +58,20 @@ export async function PATCH(
     const [updatedOrder] = await db
       .update(orders)
       .set({ status: validatedData.status })
-      .where(eq(orders.id, params.id))
+      .where(eq(orders.id, id))
       .returning();
 
-    return NextResponse.json({
-      message: "Order status updated successfully",
-      order: updatedOrder,
-    });
+    return successResponse(
+      { order: updatedOrder },
+      "Order status updated successfully"
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      );
+      return validationErrorResponse(error.errors);
     }
 
     console.error("Update order error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Failed to update order");
   }
 }
 

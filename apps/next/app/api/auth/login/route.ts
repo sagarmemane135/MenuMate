@@ -1,7 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { db, users, eq } from "@menumate/db";
-import { verifyPassword, signToken, setAuthCookie } from "@/lib/auth";
+import { verifyPassword, signToken } from "@/lib/auth";
+import {
+  successResponse,
+  errorResponse,
+  validationErrorResponse,
+  internalErrorResponse,
+} from "@/lib/api-response";
+import { checkRateLimit, getClientIdentifier } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -10,6 +17,18 @@ const loginSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`login:${clientId}`, 10, 60 * 1000); // 10 attempts per minute
+    
+    if (!rateLimit.allowed) {
+      return errorResponse(
+        "Too many login attempts. Please try again later.",
+        429,
+        `Rate limit exceeded. Try again after ${new Date(rateLimit.resetTime).toLocaleTimeString()}`
+      );
+    }
+
     const body = await request.json();
     const validatedData = loginSchema.parse(body);
 
@@ -21,10 +40,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 }
-      );
+      return errorResponse("Invalid email or password", 401);
     }
 
     // Verify password
@@ -34,24 +50,23 @@ export async function POST(request: NextRequest) {
     );
 
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 }
-      );
+      return errorResponse("Invalid email or password", 401);
     }
 
     // Check status - if pending, return 403
     if (user.status === "pending") {
-      return NextResponse.json(
-        { error: "Account Under Review", message: "Your account is pending approval. Please wait for admin approval." },
-        { status: 403 }
+      return errorResponse(
+        "Account Under Review",
+        403,
+        "Your account is pending approval. Please wait for admin approval."
       );
     }
 
     if (user.status === "rejected") {
-      return NextResponse.json(
-        { error: "Account Rejected", message: "Your account has been rejected. Please contact support." },
-        { status: 403 }
+      return errorResponse(
+        "Account Rejected",
+        403,
+        "Your account has been rejected. Please contact support."
       );
     }
 
@@ -62,31 +77,44 @@ export async function POST(request: NextRequest) {
       role: user.role,
     });
 
-    await setAuthCookie(token);
-
-    return NextResponse.json({
-      message: "Login successful",
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        status: user.status,
+    // Create response
+    const response = successResponse(
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          status: user.status,
+        },
       },
+      "Login successful"
+    );
+
+    // Set cookie in response using NextResponse.cookies (proper Next.js 15 way)
+    const cookieName = (process.env.COOKIE_NAME || "menumate_session").trim();
+    
+    // On Vercel, always use Secure flag (HTTPS is always used)
+    const isVercel = !!process.env.VERCEL;
+    const isSecure = process.env.NODE_ENV === "production" || isVercel;
+    
+    // Use NextResponse.cookies.set() - this is the proper way in Next.js 15
+    response.cookies.set(cookieName, token, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
     });
+
+    return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      );
+      return validationErrorResponse(error.errors);
     }
 
     console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Failed to process login");
   }
 }
 

@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const itemTotal = menuItem.price * item.quantity;
+      const itemTotal = Number(menuItem.price) * item.quantity;
       totalAmount += itemTotal;
 
       orderItemsData.push({
         itemId: menuItem.id,
         name: menuItem.name,
         quantity: item.quantity,
-        price: menuItem.price,
+        price: Number(menuItem.price),
       });
     }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         customerPhone: validatedData.customerPhone,
         tableNumber: validatedData.tableNumber || null,
         items: orderItemsData,
-        totalAmount,
+        totalAmount: totalAmount.toString(),
         status: "pending",
         notes: validatedData.notes || null,
       })

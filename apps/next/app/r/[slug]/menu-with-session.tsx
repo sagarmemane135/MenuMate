@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send } from "lucide-react";
-import { useCart } from "@menumate/app";
+import { useCart, useToast } from "@menumate/app";
 import { CartDrawer } from "@menumate/app";
 import { Button } from "@menumate/app";
 
@@ -39,6 +39,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const tableNumber = searchParams.get("table");
   
   const { addItem, items, clearCart } = useCart();
+  const { showToast } = useToast();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isSendingOrder, setIsSendingOrder] = useState(false);
@@ -86,7 +87,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
   const sendToKitchen = async () => {
     if (items.length === 0) {
-      alert("Please add items to your cart first");
+      showToast("Please add items to your cart first", "warning");
       return;
     }
 
@@ -96,7 +97,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
 
     if (!sessionToken) {
-      alert("Please wait, initializing session...");
+      showToast("Please wait, initializing session...", "info");
       return;
     }
 
@@ -118,7 +119,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
       const data = await response.json();
       if (data.success) {
-        alert(`✅ Order sent to kitchen! Order #${data.order.id.slice(0, 8).toUpperCase()}`);
+        showToast(
+          `Order sent to kitchen! Order #${data.order.id.slice(0, 8).toUpperCase()}`,
+          "success"
+        );
         clearCart();
         setShowCustomerForm(false);
       } else {
@@ -126,7 +130,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       }
     } catch (error) {
       console.error("Order error:", error);
-      alert(error instanceof Error ? error.message : "Failed to send order");
+      showToast(
+        error instanceof Error ? error.message : "Failed to send order",
+        "error"
+      );
     } finally {
       setIsSendingOrder(false);
     }
@@ -343,4 +350,5 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     </>
   );
 }
+
 

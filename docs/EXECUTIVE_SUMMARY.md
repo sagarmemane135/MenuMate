@@ -12,20 +12,24 @@
 
 ## 💡 Product Overview
 
-### What We've Built (Current Status - 90% Complete)
+### What We've Built (Current Status - 95% Complete for MVP)
 - ✅ **Digital Menu Management** - Add, edit, delete items instantly
-- ✅ **QR Code Menus** - Customers scan and view beautiful menus
+- ✅ **QR Code Generation** - Generate and download QR codes for tables
+- ✅ **Session-Based Ordering** - Realistic restaurant flow with table sessions
+- ✅ **Customer Ordering** - Add to cart, place orders directly from menu
+- ✅ **Payment Integration** - Razorpay online payments + cash/counter option
+- ✅ **Bill/Invoice System** - Consolidated bills per table session
 - ✅ **Order Management** - Track orders from Pending → Ready → Paid
 - ✅ **Multi-Restaurant Platform** - Platform admin + restaurant owner roles
 - ✅ **Mobile-First** - Manage from phone, tablet, or desktop
 - ✅ **Beautiful Design** - Professional, restaurant-friendly UI
 
-### What We're Building Next (Next 2 Months)
-- 🚧 **Customer Ordering** - Order directly from digital menu
-- 🚧 **Payment Integration** - Razorpay/Stripe for online payments
+### What We're Building Next (Next 2-3 Months)
 - 🚧 **Analytics Dashboard** - Sales, popular items, revenue trends
 - 🚧 **Notifications** - Email/SMS for orders and updates
-- 🚧 **QR Code Download** - Printable QR codes for tables
+- 🚧 **Order Tracking** - Real-time order status for customers
+- 🚧 **Kitchen Display System** - Basic KDS for order management
+- 🚧 **Print Receipts** - Order and payment receipt printing
 
 ---
 

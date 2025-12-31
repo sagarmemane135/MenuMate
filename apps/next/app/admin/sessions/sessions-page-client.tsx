@@ -11,7 +11,7 @@ interface Session {
   status: string;
   totalAmount: string;
   paymentMethod: string | null;
-  paymentStatus: string;
+  paymentStatus: string | null;
   startedAt: Date;
   closedAt: Date | null;
   ordersCount: number;

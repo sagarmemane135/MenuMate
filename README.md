@@ -13,9 +13,9 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 
 ## 📚 Documentation
 
-- **[Product Documentation](./docs/PRODUCT_DOCUMENTATION.md)** - Complete product overview, market analysis, and go-to-market strategy (18,000+ words)
 - **[Features Checklist](./docs/FEATURES_CHECKLIST.md)** - Detailed list of implemented and planned features
 - **[Executive Summary](./docs/EXECUTIVE_SUMMARY.md)** - Quick overview for stakeholders and investors
+- **[Product Documentation](./docs/PRODUCT_DOCUMENTATION.md)** - Complete product overview, market analysis, and go-to-market strategy
 
 ---
 
@@ -66,12 +66,15 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 
 4. **Set up environment variables**
    ```bash
-   # Copy example env files
-   cp apps/next/.env.example apps/next/.env
-   cp packages/db/.env.example packages/db/.env
+   # Create .env file in apps/next/
+   # Copy from root .env.example or create manually with:
+   # DATABASE_URL, JWT_SECRET, COOKIE_NAME, etc.
    
-   # Edit .env files with your values
-   # DATABASE_URL, JWT_SECRET, etc.
+   # Required variables:
+   # DATABASE_URL="postgresql://..."
+   # JWT_SECRET="your-secret-key"
+   # COOKIE_NAME="menumate_session"
+   # NODE_ENV="development"
    ```
 
 5. **Run database migrations**
@@ -84,9 +87,11 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 
 6. **Create super admin user (optional)**
    ```bash
-   cd packages/db
-   npm run create-super-admin
-   cd ../..
+   # Use defaults (admin@menumate.com / admin123 / Super Admin)
+   npm run create-admin
+   
+   # Or with custom values
+   npm run create-admin -- email@example.com password123 "Full Name"
    ```
 
 7. **Start development server**
@@ -199,12 +204,26 @@ MenuMate2/
 - Public menu display
 - Mobile responsive design
 
-### 🚧 Phase 2 - Essential Features (Next 2 Months)
+### ✅ Phase 2 - Essential Features (Complete)
 - QR code generation
 - Customer ordering flow
 - Payment integration (Razorpay)
+- Shopping cart functionality
+- Bill/invoice generation
+
+### ✅ Phase 5A - Session-Based Ordering (Complete)
+- Table session management
+- Multiple orders per session
+- Consolidated billing
+- "Send to Kitchen" without payment
+- "Pay at Counter" option
+
+### 🚧 Phase 3 - Next Features (Next 2-3 Months)
 - Email/SMS notifications
 - Basic analytics dashboard
+- Order tracking for customers
+- Kitchen Display System (basic)
+- Print receipts
 
 ### 📅 Phase 3 - Advanced Features (2-4 Months)
 - Item variants and add-ons

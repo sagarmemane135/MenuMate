@@ -5,4 +5,6 @@ export { AuthProvider } from "./provider/auth-provider";
 export { CartProvider, useCart } from "./context/cart-context";
 export { CartDrawer } from "./features/menu/cart-drawer";
 export { MenuDisplayWithCart } from "./features/menu/menu-display-with-cart";
+export { ToastProvider, useToast } from "./hooks/use-toast";
 export type { CartItem } from "./context/cart-context";
+export type { Toast, ToastType } from "./hooks/use-toast";

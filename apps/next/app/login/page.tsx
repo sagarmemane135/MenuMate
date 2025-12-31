@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, Button, Input } from "@menumate/app";
-import { UtensilsCrossed } from "lucide-react";
+import { Card, Button, Input, useToast } from "@menumate/app";
+import { UtensilsCrossed, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +33,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        credentials: "include", // Important: Include cookies in request/response
       });
 
       const result = await response.json();
@@ -44,8 +46,17 @@ export default function LoginPage() {
 
       setIsLoading(false);
       const redirect = searchParams.get("redirect") || "/admin";
-      router.push(redirect);
-      router.refresh();
+      
+      // Use router.push with a small delay to ensure cookie is set
+      // Then force a full page reload to ensure middleware reads the cookie
+      setTimeout(() => {
+        // First try router.push
+        router.push(redirect);
+        // Then force a full reload after a brief moment to ensure cookie is read
+        setTimeout(() => {
+          window.location.href = redirect;
+        }, 50);
+      }, 150);
     } catch (err) {
       setError("An unexpected error occurred");
       setIsLoading(false);
@@ -67,6 +78,7 @@ export default function LoginPage() {
           fullName,
           restaurantName,
         }),
+        credentials: "include", // Important: Include cookies in request/response
       });
 
       const result = await response.json();
@@ -238,5 +250,20 @@ export default function LoginPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-slate-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

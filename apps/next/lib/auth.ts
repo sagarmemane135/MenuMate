@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { db, users, eq } from "@menumate/db";
 
@@ -7,12 +8,13 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "super_secret_dev_key_123"
 );
 
-const COOKIE_NAME = process.env.COOKIE_NAME || "menumate_session";
+const COOKIE_NAME = (process.env.COOKIE_NAME || "menumate_session").trim();
 
 export interface JWTPayload {
   userId: string;
   email: string;
   role: "super_admin" | "owner" | "staff";
+  [key: string]: string | number | boolean | undefined;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -45,7 +47,14 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
   }
 }
 
-export async function getTokenFromCookie(): Promise<string | null> {
+export async function getTokenFromCookie(request?: NextRequest): Promise<string | null> {
+  // In API routes, use request.cookies
+  if (request) {
+    const token = request.cookies.get(COOKIE_NAME)?.value;
+    return token || null;
+  }
+  
+  // In Server Components, use cookies() from next/headers
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME);
   return token?.value || null;
@@ -67,13 +76,15 @@ export async function deleteAuthCookie(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getCurrentUser(): Promise<JWTPayload | null> {
-  const token = await getTokenFromCookie();
+export async function getCurrentUser(request?: NextRequest): Promise<JWTPayload | null> {
+  const token = await getTokenFromCookie(request);
+  
   if (!token) {
     return null;
   }
 
   const payload = await verifyToken(token);
+  
   if (!payload) {
     return null;
   }
