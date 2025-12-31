@@ -223,26 +223,32 @@ function OrderCard({
   const createdAt = new Date(order.createdAt);
   const timeAgo = Math.floor((Date.now() - createdAt.getTime()) / 1000 / 60);
 
+  const statusBorderColors = {
+    pending: "border-yellow-400",
+    cooking: "border-blue-400",
+    ready: "border-green-400",
+  };
+
   return (
-    <div className="bg-gray-700 rounded-lg p-4 border-l-4 border-yellow-400">
+    <div className={`bg-gradient-to-br from-white to-slate-50 rounded-lg p-4 border-l-4 ${statusBorderColors[order.status]} shadow-md`}>
       <div className="flex justify-between items-start mb-2">
         <div>
-          <div className="font-bold text-lg">Table {order.tableNumber || "N/A"}</div>
-          <div className="text-sm text-gray-400">{order.customerName}</div>
+          <div className="font-bold text-lg text-slate-900">Table {order.tableNumber || "N/A"}</div>
+          <div className="text-sm text-slate-600">{order.customerName}</div>
         </div>
         <div className="text-right">
-          <div className="font-bold text-lg">₹{Number(order.totalAmount).toFixed(2)}</div>
-          <div className="text-xs text-gray-400">{timeAgo}m ago</div>
+          <div className="font-bold text-lg text-orange-600">₹{Number(order.totalAmount).toFixed(2)}</div>
+          <div className="text-xs text-slate-500">{timeAgo}m ago</div>
         </div>
       </div>
 
       <div className="mb-3">
-        <div className="text-sm font-semibold mb-1">
+        <div className="text-sm font-semibold mb-1 text-slate-700">
           {totalItems} {totalItems === 1 ? "item" : "items"}
         </div>
         <div className="space-y-1">
           {order.items.map((item, idx) => (
-            <div key={idx} className="text-sm text-gray-300">
+            <div key={idx} className="text-sm text-slate-600">
               {item.quantity}x {item.name}
             </div>
           ))}
@@ -250,7 +256,7 @@ function OrderCard({
       </div>
 
       {order.notes && (
-        <div className="mb-3 text-sm text-yellow-300 bg-yellow-900/20 p-2 rounded">
+        <div className="mb-3 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 p-2 rounded">
           <strong>Note:</strong> {order.notes}
         </div>
       )}
@@ -261,7 +267,7 @@ function OrderCard({
             <Button
               onClick={() => onUpdateStatus("cooking")}
               disabled={isUpdating}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isUpdating ? "..." : "Start Cooking"}
             </Button>
@@ -270,7 +276,7 @@ function OrderCard({
             <Button
               onClick={() => onUpdateStatus("ready")}
               disabled={isUpdating}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
             >
               {isUpdating ? "..." : "Mark Ready"}
             </Button>
