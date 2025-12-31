@@ -60,6 +60,25 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   }, [tableNumber, restaurant.slug]);
 
+  // Listen for order status updates via WebSocket
+  usePusherChannel(
+    sessionToken ? `session-${sessionToken}` : null,
+    "order:status:updated",
+    (data: unknown) => {
+      const eventData = data as { orderId: string; status: string };
+      // Show notification to customer
+      const statusMessages: Record<string, string> = {
+        cooking: "Your order is being prepared! 👨‍🍳",
+        ready: "Your order is ready! 🎉",
+        paid: "Payment received! Thank you! ✅",
+      };
+
+      if (statusMessages[eventData.status]) {
+        showToast(statusMessages[eventData.status], "info");
+      }
+    }
+  );
+
   const createSession = async () => {
     if (!tableNumber || isCreatingSession) return;
     
