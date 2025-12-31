@@ -135,7 +135,9 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         if (sessionData.success) {
           token = sessionData.session.sessionToken;
           setSessionToken(token);
-          localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, token);
+          if (tableNumber && typeof window !== "undefined") {
+            localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, token);
+          }
         } else {
           throw new Error(sessionData.error || "Failed to create session");
         }
