@@ -22,7 +22,17 @@ export default async function KitchenPage() {
     .limit(1);
 
   if (!restaurant) {
-    redirect("/admin");
+    // Show error message instead of silent redirect
+    return (
+      <div className="px-4 py-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Restaurant Not Found</h2>
+          <p className="text-red-600">
+            You don't have a restaurant associated with your account. Please contact support.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // Get all pending, cooking, and ready orders
