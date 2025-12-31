@@ -7,6 +7,7 @@ import {
   validationErrorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
+import { emitOrderCreated } from "@/lib/websocket-events";
 
 const createOrderSchema = z.object({
   sessionToken: z.string(),
@@ -89,6 +90,23 @@ export async function POST(request: NextRequest) {
         notes: validatedData.notes || null,
       })
       .returning();
+
+    // Emit WebSocket event to restaurant room (for kitchen staff)
+    await emitOrderCreated(session.restaurantId, {
+      order: {
+        id: newOrder.id,
+        items: newOrder.items,
+        totalAmount: newOrder.totalAmount,
+        status: newOrder.status,
+        tableNumber: session.tableNumber,
+        customerName: validatedData.customerName,
+        createdAt: newOrder.createdAt,
+      },
+      session: {
+        id: session.id,
+        tableNumber: session.tableNumber,
+      },
+    });
 
     return createdResponse(
       {

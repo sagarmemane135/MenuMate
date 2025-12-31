@@ -41,7 +41,7 @@ export default async function OrdersPage() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  return <OrdersPageClient initialOrders={sortedOrders} />;
+  return <OrdersPageClient initialOrders={sortedOrders} restaurantId={restaurant.id} />;
 }
 
 

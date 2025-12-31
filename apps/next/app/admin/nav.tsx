@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { UtensilsCrossed, LayoutDashboard, Menu, Package, UserCheck, LogOut, X, AlignJustify, Users } from "lucide-react";
+import { UtensilsCrossed, LayoutDashboard, Menu, Package, UserCheck, LogOut, X, AlignJustify, Users, ChefHat } from "lucide-react";
 
 interface AdminNavProps {
   userRole: string;
@@ -36,6 +36,12 @@ export function AdminNav({ userRole, userEmail }: AdminNavProps) {
       href: "/admin/sessions",
       label: "Sessions",
       icon: Users,
+      roles: ["owner"]
+    },
+    {
+      href: "/admin/kitchen",
+      label: "Kitchen",
+      icon: ChefHat,
       roles: ["owner"]
     },
     {

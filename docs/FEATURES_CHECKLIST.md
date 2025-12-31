@@ -174,16 +174,17 @@
 ### HIGH PRIORITY (Next 1-2 Months)
 
 #### Order Tracking & Notifications
-- [ ] Order tracking for customers
+- [x] Real-time order status updates for customers ✅
+- [x] Order notifications (sound/visual) for admin ✅
 - [ ] Estimated time display
 - [ ] Order confirmation page
 - [ ] Email notifications (order placed, status changed)
 - [ ] SMS notifications (Twilio)
 - [ ] WhatsApp notifications
-- [ ] Order notifications (sound/visual) for admin
 
 #### Essential Admin Features
-- [ ] Kitchen Display System (basic)
+- [x] Kitchen Display System (basic) ✅
+- [x] Real-time WebSocket notifications ✅
 - [ ] Print order receipt
 - [ ] Bulk menu item upload (CSV)
 - [ ] Export menu data

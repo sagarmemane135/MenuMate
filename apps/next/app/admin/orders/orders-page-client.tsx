@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, Button, useToast } from "@menumate/app";
+import { usePusherChannel } from "@/lib/pusher-client";
 
 interface Order {
   id: string;
@@ -15,6 +16,7 @@ interface Order {
 
 interface OrdersPageClientProps {
   initialOrders: Order[];
+  restaurantId: string;
 }
 
 const statusColors = {
@@ -33,10 +35,36 @@ const statusOptions: Array<{ value: Order["status"]; label: string }> = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
+export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClientProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  // Listen for new orders and status updates
+  usePusherChannel(
+    `restaurant-${restaurantId}`,
+    "order:created",
+    (data: unknown) => {
+      const eventData = data as { order: Order; session: { id: string; tableNumber: string } };
+      setOrders((prev) => [eventData.order, ...prev]);
+      showToast("New order received! 🎉", "info");
+    }
+  );
+
+  usePusherChannel(
+    `restaurant-${restaurantId}`,
+    "order:status:updated",
+    (data: unknown) => {
+      const eventData = data as { orderId: string; status: string };
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === eventData.orderId
+            ? { ...order, status: eventData.status as Order["status"] }
+            : order
+        )
+      );
+    }
+  );
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingOrderId(orderId);
@@ -52,16 +80,17 @@ export function OrdersPageClient({ initialOrders }: OrdersPageClientProps) {
         // Update order status in state
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === orderId ? { ...order, status: result.order.status } : order
+            order.id === orderId ? { ...order, status: result.data.order.status } : order
           )
         );
+        showToast(`Order status updated to ${newStatus}`, "success");
       } else {
         const result = await response.json();
-        alert(result.error || "Failed to update order status");
+        showToast(result.error || "Failed to update order status", "error");
       }
     } catch (error) {
       console.error("Failed to update order:", error);
-      alert("An error occurred while updating the order");
+      showToast("An error occurred while updating the order", "error");
     } finally {
       setUpdatingOrderId(null);
     }

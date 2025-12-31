@@ -6,6 +6,7 @@ import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send } from "luc
 import { useCart, useToast } from "@menumate/app";
 import { CartDrawer } from "@menumate/app";
 import { Button } from "@menumate/app";
+import { usePusherChannel } from "@/lib/pusher-client";
 
 interface Category {
   id: string;

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button, useToast } from "@menumate/app";
 import { Receipt, CreditCard, Store, Users, ArrowLeft, Loader2 } from "lucide-react";
 import type { RazorpayPaymentResponse, RazorpayCheckoutOptions } from "@/lib/types/razorpay";
+import { usePusherChannel } from "@/lib/pusher-client";
 
 interface OrderItem {
   itemId: string;
@@ -48,6 +49,27 @@ function BillPageContent() {
       fetchSessionData();
     }
   }, [sessionToken]);
+
+  // Listen for order status updates via WebSocket
+  usePusherChannel(
+    sessionToken ? `session-${sessionToken}` : null,
+    "order:status:updated",
+    (data: unknown) => {
+      const eventData = data as { orderId: string; status: string };
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === eventData.orderId
+            ? { ...order, status: eventData.status }
+            : order
+        )
+      );
+
+      // Show notification
+      if (eventData.status === "ready") {
+        showToast("One of your orders is ready! 🎉", "success");
+      }
+    }
+  );
 
   const fetchSessionData = async () => {
     if (!sessionToken) return;
