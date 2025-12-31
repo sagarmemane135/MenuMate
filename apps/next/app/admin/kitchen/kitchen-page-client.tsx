@@ -118,36 +118,36 @@ export function KitchenPageClient({
   const readyOrders = orders.filter((o) => o.status === "ready");
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50 p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <ChefHat className="w-10 h-10" />
+          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3 text-slate-900">
+            <ChefHat className="w-10 h-10 text-orange-500" />
             Kitchen Display System
           </h1>
-          <p className="text-gray-400">Real-time order management</p>
+          <p className="text-slate-600 font-medium">Real-time order management</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-sm text-gray-400">Total Orders</div>
-            <div className="text-2xl font-bold">{orders.length}</div>
+          <div className="text-right bg-white rounded-lg px-4 py-2 shadow-md">
+            <div className="text-sm text-slate-600 font-medium">Total Orders</div>
+            <div className="text-2xl font-bold text-orange-600">{orders.length}</div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Pending Orders */}
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-orange-100">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-yellow-400" />
-            <h2 className="text-2xl font-semibold">Pending</h2>
-            <span className="bg-yellow-500 text-black px-2 py-1 rounded-full text-sm font-bold">
+            <Clock className="w-5 h-5 text-yellow-500" />
+            <h2 className="text-2xl font-semibold text-slate-900">Pending</h2>
+            <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-bold">
               {pendingOrders.length}
             </span>
           </div>
           <div className="space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
             {pendingOrders.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No pending orders</p>
+              <p className="text-slate-500 text-center py-8">No pending orders</p>
             ) : (
               pendingOrders.map((order) => (
                 <OrderCard
@@ -162,17 +162,17 @@ export function KitchenPageClient({
         </div>
 
         {/* Cooking Orders */}
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-blue-100">
           <div className="flex items-center gap-2 mb-4">
-            <ChefHat className="w-5 h-5 text-blue-400" />
-            <h2 className="text-2xl font-semibold">Cooking</h2>
-            <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-bold">
+            <ChefHat className="w-5 h-5 text-blue-500" />
+            <h2 className="text-2xl font-semibold text-slate-900">Cooking</h2>
+            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold">
               {cookingOrders.length}
             </span>
           </div>
           <div className="space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
             {cookingOrders.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No orders cooking</p>
+              <p className="text-slate-500 text-center py-8">No orders cooking</p>
             ) : (
               cookingOrders.map((order) => (
                 <OrderCard
@@ -187,17 +187,17 @@ export function KitchenPageClient({
         </div>
 
         {/* Ready Orders */}
-        <div className="bg-gray-800 rounded-lg p-4">
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-green-100">
           <div className="flex items-center gap-2 mb-4">
-            <CheckCircle className="w-5 h-5 text-green-400" />
-            <h2 className="text-2xl font-semibold">Ready</h2>
-            <span className="bg-green-500 text-white px-2 py-1 rounded-full text-sm font-bold">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <h2 className="text-2xl font-semibold text-slate-900">Ready</h2>
+            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
               {readyOrders.length}
             </span>
           </div>
           <div className="space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
             {readyOrders.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No orders ready</p>
+              <p className="text-slate-500 text-center py-8">No orders ready</p>
             ) : (
               readyOrders.map((order) => (
                 <OrderCard key={order.id} order={order} />

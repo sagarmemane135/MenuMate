@@ -90,8 +90,10 @@ function LoginPageContent() {
       }
 
       setIsLoading(false);
-      alert("Registration successful! Your account is pending approval.");
-      router.push("/login");
+      showToast("Registration successful! Your account is pending approval.", "success");
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } catch (err) {
       setError("An unexpected error occurred");
       setIsLoading(false);
