@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth";
 import { db, restaurants, orders, eq, and, or, desc } from "@menumate/db";
 import { redirect } from "next/navigation";
@@ -43,26 +42,24 @@ export default async function KitchenPage() {
     .orderBy(desc(orders.createdAt));
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <KitchenPageClient
-        restaurantId={restaurant.id}
-        initialOrders={allOrders.map((order) => ({
-          id: order.id,
-          items: order.items as Array<{
-            itemId: string;
-            name: string;
-            quantity: number;
-            price: number;
-          }>,
-          status: order.status as "pending" | "cooking" | "ready" | "paid" | "cancelled",
-          tableNumber: order.tableNumber,
-          totalAmount: order.totalAmount,
-          customerName: order.customerName,
-          notes: order.notes,
-          createdAt: order.createdAt,
-        }))}
-      />
-    </Suspense>
+    <KitchenPageClient
+      restaurantId={restaurant.id}
+      initialOrders={allOrders.map((order) => ({
+        id: order.id,
+        items: order.items as Array<{
+          itemId: string;
+          name: string;
+          quantity: number;
+          price: number;
+        }>,
+        status: order.status as "pending" | "cooking" | "ready" | "paid" | "cancelled",
+        tableNumber: order.tableNumber,
+        totalAmount: order.totalAmount,
+        customerName: order.customerName,
+        notes: order.notes,
+        createdAt: order.createdAt,
+      }))}
+    />
   );
 }
 
