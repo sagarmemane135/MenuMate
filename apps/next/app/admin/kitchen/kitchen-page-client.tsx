@@ -223,10 +223,12 @@ function OrderCard({
   const createdAt = new Date(order.createdAt);
   const timeAgo = Math.floor((Date.now() - createdAt.getTime()) / 1000 / 60);
 
-  const statusBorderColors = {
+  const statusBorderColors: Record<Order["status"], string> = {
     pending: "border-yellow-400",
     cooking: "border-blue-400",
     ready: "border-green-400",
+    paid: "border-gray-400",
+    cancelled: "border-red-400",
   };
 
   return (
