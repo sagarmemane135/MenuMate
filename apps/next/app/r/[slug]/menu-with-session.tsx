@@ -117,7 +117,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
 
     // If no session token, create one first
-    let token = sessionToken;
+    let token: string | null = sessionToken;
     if (!token && tableNumber) {
       setIsSendingOrder(true);
       showToast("Creating session...", "info");
@@ -132,11 +132,16 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         });
 
         const sessionData = await sessionResponse.json();
-        if (sessionData.success) {
+        if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
           setSessionToken(token);
-          if (tableNumber && typeof window !== "undefined") {
-            localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, token);
+          if (tableNumber && token && typeof window !== "undefined") {
+            try {
+              window.localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, token);
+            } catch (e) {
+              // Ignore localStorage errors
+              console.warn("Failed to save session to localStorage:", e);
+            }
           }
         } else {
           throw new Error(sessionData.error || "Failed to create session");
