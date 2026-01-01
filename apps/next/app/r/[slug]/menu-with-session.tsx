@@ -70,6 +70,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     status: string;
     createdAt: string;
   }>>([]);
+  const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | "paid" | null>(null);
 
   // Validate phone number (10 digits for Indian numbers)
   const validatePhone = (phone: string): boolean => {
@@ -208,9 +209,23 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                   const sessionTable = verifyData.session.tableNumber;
                   if (sessionTable === effectiveTable) {
                     // Token is valid and matches table
-                    setSessionToken(savedToken);
-                    const masterKey = `active_session_${restaurant.slug}`;
-                    localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
+                    // Check if session is still active
+                    const sessionStatusValue = verifyData.session.status || "active";
+                    if (sessionStatusValue === "active") {
+                      setSessionToken(savedToken);
+                      setSessionStatus("active");
+                      const masterKey = `active_session_${restaurant.slug}`;
+                      localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
+                    } else {
+                      // Session is closed/paid, clear it and create new one
+                      console.log(`[CLIENT] useEffect - Session is ${sessionStatusValue}, creating new session.`);
+                      localStorage.removeItem(storageKey);
+                      const masterKey = `active_session_${restaurant.slug}`;
+                      localStorage.removeItem(masterKey);
+                      setSessionToken(null);
+                      setSessionStatus(null);
+                      createSession(effectiveTable);
+                    }
                   } else {
                     // Token is for a different table, clear it and create new session
                     console.log(`[CLIENT] useEffect - Token is for table ${sessionTable}, but current table is ${effectiveTable}. Creating new session.`);
@@ -356,7 +371,9 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       if (data.success && data.session?.sessionToken) {
         const token = data.session.sessionToken;
         const sessionTable = data.session.tableNumber || table;
+        const sessionStatusValue = data.session.status || "active";
         setSessionToken(token);
+        setSessionStatus(sessionStatusValue as "active" | "closed" | "paid");
         if (typeof window !== "undefined") {
           try {
             const storageKey = `session_${restaurant.slug}_${sessionTable}`;
@@ -480,14 +497,17 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
           const sessionTable = sessionData.session.tableNumber || table;
+          const sessionStatusValue = sessionData.session.status || "active";
           
           // Clear old session token if it exists and is different
           if (sessionToken && sessionToken !== token) {
             console.log("[CLIENT] sendToKitchen - Clearing old session token");
             setSessionToken(null);
+            setSessionStatus(null);
           }
           
           setSessionToken(token);
+          setSessionStatus(sessionStatusValue as "active" | "closed" | "paid");
           
           if (sessionTable && token && typeof window !== "undefined") {
             try {
@@ -1032,7 +1052,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                             sendToKitchen();
                           }
                         }}
-                        disabled={isSendingOrder || isCreatingSession || !currentTable}
+                        disabled={isSendingOrder || isCreatingSession || !currentTable || sessionStatus === "closed" || sessionStatus === "paid"}
                         className="w-full h-12 text-base font-semibold"
                       >
                         <Send className="w-4 h-4 mr-2" />
@@ -1066,7 +1086,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                     sendToKitchen();
                   }
                 }}
-                disabled={isSendingOrder || isCreatingSession}
+                disabled={isSendingOrder || isCreatingSession || sessionStatus === "closed" || sessionStatus === "paid"}
                 className="w-full h-12 text-base font-semibold"
               >
                 <Send className="w-4 h-4 mr-2" />

@@ -235,6 +235,49 @@ export async function emitSessionUpdated(
       );
     }
   } catch (error) {
+    console.error("[WS] Failed to emit session:updated event:", error);
+  }
+}
+
+/**
+ * Emit session closed/paid event (when session is closed or paid)
+ */
+export async function emitSessionClosed(
+  restaurantId: string,
+  sessionToken: string,
+  eventData: {
+    sessionId: string;
+    tableNumber: string;
+    status: "closed" | "paid";
+    totalAmount: string;
+    paymentMethod?: string;
+  }
+) {
+  try {
+    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+      const pusher = new Pusher({
+        appId: process.env.PUSHER_APP_ID,
+        key: process.env.PUSHER_KEY,
+        secret: process.env.PUSHER_SECRET,
+        cluster: process.env.PUSHER_CLUSTER || "ap2",
+        useTLS: true,
+      });
+
+      console.log("[WS] Triggering session:closed on channel:", `restaurant-${restaurantId}`);
+      await pusher.trigger(
+        `restaurant-${restaurantId}`,
+        "session:closed",
+        eventData
+      );
+
+      console.log("[WS] Triggering session:closed on channel:", `session-${sessionToken}`);
+      await pusher.trigger(
+        `session-${sessionToken}`,
+        "session:closed",
+        eventData
+      );
+    }
+  } catch (error) {
     console.error("Failed to emit session:updated event:", error);
     // Don't fail the request if WebSocket emission fails
   }
