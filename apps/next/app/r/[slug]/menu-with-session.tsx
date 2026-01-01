@@ -42,59 +42,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const { addItem, items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
   const { showToast } = useToast();
   
-  // Initialize session token and table number from localStorage immediately (synchronously)
-  const getInitialSessionData = (): { token: string | null; table: string | null } => {
-    if (typeof window === "undefined") return { token: null, table: null };
-    
-    // Store a master key for the current restaurant's active session
-    const masterKey = `active_session_${restaurant.slug}`;
-    const masterData = localStorage.getItem(masterKey);
-    
-    if (masterData) {
-      try {
-        const { token, table } = JSON.parse(masterData);
-        if (token && table) {
-          console.log("[CLIENT] Found master session data - table:", table);
-          return { token, table };
-        }
-      } catch (e) {
-        console.warn("[CLIENT] Failed to parse master session data:", e);
-      }
-    }
-    
-    // First, try to get table number from URL
-    if (tableNumber) {
-      const storageKey = `session_${restaurant.slug}_${tableNumber}`;
-      const savedToken = localStorage.getItem(storageKey);
-      if (savedToken) {
-        // Also store in master key for easier retrieval
-        localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: tableNumber }));
-        return { token: savedToken, table: tableNumber };
-      }
-    }
-    
-    // If no table number in URL, try to find any saved session for this restaurant
-    // Check localStorage for any session keys matching this restaurant
-    const prefix = `session_${restaurant.slug}_`;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(prefix)) {
-        const savedTable = key.replace(prefix, "");
-        const savedToken = localStorage.getItem(key);
-        if (savedToken && savedTable) {
-          console.log("[CLIENT] Found saved session for table:", savedTable);
-          // Store in master key
-          localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: savedTable }));
-          return { token: savedToken, table: savedTable };
-        }
-      }
-    }
-    
-    return { token: null, table: null };
-  };
-  
-  const initialData = getInitialSessionData();
-  const [sessionToken, setSessionToken] = useState<string | null>(initialData.token);
+  // Initialize state without localStorage access (to avoid hydration mismatch)
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isSendingOrder, setIsSendingOrder] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -102,7 +51,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const [phoneError, setPhoneError] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [inputTableNumber, setInputTableNumber] = useState(tableNumber || initialData.table || "");
+  const [inputTableNumber, setInputTableNumber] = useState(tableNumber || "");
   const [recentOrders, setRecentOrders] = useState<Array<{
     id: string;
     status: string;
@@ -139,59 +88,110 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
-  // Verify and restore session on mount
+  // Restore session from localStorage on mount (client-side only)
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    
     console.log("[CLIENT] useEffect - Session initialization");
     console.log("[CLIENT] useEffect - tableNumber from URL:", tableNumber);
-    console.log("[CLIENT] useEffect - inputTableNumber:", inputTableNumber);
-    console.log("[CLIENT] useEffect - Initial sessionToken from state:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
     
-    // Determine which table number to use
-    const effectiveTable = tableNumber || inputTableNumber;
+    // Get initial session data from localStorage
+    const getInitialSessionData = (): { token: string | null; table: string | null } => {
+      // Store a master key for the current restaurant's active session
+      const masterKey = `active_session_${restaurant.slug}`;
+      const masterData = localStorage.getItem(masterKey);
+      
+      if (masterData) {
+        try {
+          const { token, table } = JSON.parse(masterData);
+          if (token && table) {
+            console.log("[CLIENT] Found master session data - table:", table);
+            return { token, table };
+          }
+        } catch (e) {
+          console.warn("[CLIENT] Failed to parse master session data:", e);
+        }
+      }
+      
+      // First, try to get table number from URL
+      if (tableNumber) {
+        const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+        const savedToken = localStorage.getItem(storageKey);
+        if (savedToken) {
+          // Also store in master key for easier retrieval
+          localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: tableNumber }));
+          return { token: savedToken, table: tableNumber };
+        }
+      }
+      
+      // If no table number in URL, try to find any saved session for this restaurant
+      // Check localStorage for any session keys matching this restaurant
+      const prefix = `session_${restaurant.slug}_`;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          const savedTable = key.replace(prefix, "");
+          const savedToken = localStorage.getItem(key);
+          if (savedToken && savedTable) {
+            console.log("[CLIENT] Found saved session for table:", savedTable);
+            // Store in master key
+            localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: savedTable }));
+            return { token: savedToken, table: savedTable };
+          }
+        }
+      }
+      
+      return { token: null, table: null };
+    };
+    
+    const initialData = getInitialSessionData();
+    const effectiveTable = tableNumber || initialData.table || inputTableNumber;
+    
+    // Update inputTableNumber if we found one from localStorage
+    if (initialData.table && !tableNumber && !inputTableNumber) {
+      setInputTableNumber(initialData.table);
+    }
     
     // If we have a table number (from URL or localStorage), restore session
-    if (effectiveTable && typeof window !== "undefined") {
+    if (effectiveTable) {
       // If table number was restored from localStorage but not in URL, update URL
-      if (!tableNumber && inputTableNumber) {
-        console.log("[CLIENT] useEffect - Restoring table number to URL:", inputTableNumber);
-        router.replace(`/r/${restaurant.slug}?table=${inputTableNumber}`, { scroll: false });
+      if (!tableNumber && initialData.table) {
+        console.log("[CLIENT] useEffect - Restoring table number to URL:", initialData.table);
+        router.replace(`/r/${restaurant.slug}?table=${initialData.table}`, { scroll: false });
       }
       
       const storageKey = `session_${restaurant.slug}_${effectiveTable}`;
-      const savedToken = localStorage.getItem(storageKey);
+      const savedToken = initialData.token || localStorage.getItem(storageKey);
       
-      // If we have a token (either from initial state or localStorage), verify it
-      const tokenToVerify = sessionToken || savedToken;
-      
-      if (tokenToVerify) {
-        console.log("[CLIENT] useEffect - Verifying token with server:", tokenToVerify.substring(0, 8) + "...");
+      // If we have a token, verify it
+      if (savedToken) {
+        console.log("[CLIENT] useEffect - Verifying token with server:", savedToken.substring(0, 8) + "...");
         // Verify the token is still valid
-        verifySession(tokenToVerify).then((isValid) => {
+        verifySession(savedToken).then((isValid) => {
           if (isValid) {
             console.log("[CLIENT] useEffect - Token is valid, ensuring it's set in state");
             // Make sure token is set in state and localStorage
-            if (sessionToken !== tokenToVerify) {
-              setSessionToken(tokenToVerify);
-            }
-            if (savedToken !== tokenToVerify) {
-              localStorage.setItem(storageKey, tokenToVerify);
-            }
+            setSessionToken(savedToken);
+            const masterKey = `active_session_${restaurant.slug}`;
+            localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
           } else {
             console.log("[CLIENT] useEffect - Token is invalid, clearing and getting existing session");
             localStorage.removeItem(storageKey);
+            const masterKey = `active_session_${restaurant.slug}`;
+            localStorage.removeItem(masterKey);
             setSessionToken(null);
             // The API will check for existing active sessions and return it if found
-            createSession();
+            createSession(effectiveTable);
           }
         }).catch((error) => {
           console.error("[CLIENT] useEffect - Error verifying token:", error);
           // On error, try to get/create session
-          createSession();
+          createSession(effectiveTable);
         });
       } else {
         console.log("[CLIENT] useEffect - No saved token, checking for existing session or creating new");
         // The API will check for existing active sessions and return it if found
-        createSession();
+        createSession(effectiveTable);
       }
     } else {
       console.log("[CLIENT] useEffect - No table number available yet, waiting for user input");
@@ -200,12 +200,16 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   }, [tableNumber, restaurant.slug]);
 
   // Listen for order status updates via WebSocket
+  const channelName = sessionToken ? `session-${sessionToken}` : null;
+  console.log("[CLIENT] Setting up WebSocket listener - channel:", channelName, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
+  
   usePusherChannel(
-    sessionToken ? `session-${sessionToken}` : null,
+    channelName,
     "order:status:updated",
     (data: unknown) => {
       const eventData = data as { orderId: string; status: string; tableNumber?: string };
-      console.log("[CLIENT] Order status update received:", eventData);
+      console.log("[CLIENT] ✅ Order status update received via WebSocket:", eventData);
+      console.log("[CLIENT] Channel:", channelName, "Order ID:", eventData.orderId, "New Status:", eventData.status);
       
       // Update recent orders list
       setRecentOrders((prev) =>
