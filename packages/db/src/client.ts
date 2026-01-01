@@ -14,7 +14,8 @@ const client = postgres(process.env.DATABASE_URL, {
   max: 20, // Maximum connections in the pool (Supabase allows more)
   idle_timeout: 20, // Close idle connections after 20 seconds
   connect_timeout: 10, // Connection timeout
-  ssl: process.env.DATABASE_URL?.includes('supabase') ? 'require' : false, // SSL for Supabase
+  ssl: process.env.DATABASE_URL?.includes('supabase') || process.env.DATABASE_URL?.includes('vercel') ? 'require' : false, // SSL for Supabase/Vercel
+  max_lifetime: 60 * 30, // 30 minutes
 });
 
 export const db = drizzle(client, { schema });

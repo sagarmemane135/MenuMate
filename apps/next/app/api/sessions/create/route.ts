@@ -10,17 +10,41 @@ const createSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check database connection
+    if (!process.env.DATABASE_URL) {
+      console.error("[SESSION CREATE API] DATABASE_URL not set");
+      return NextResponse.json(
+        { error: "Database configuration error" },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { restaurantSlug, tableNumber } = createSessionSchema.parse(body);
 
     // Get restaurant by slug
     const { restaurants } = await import("@menumate/db");
     
-    const [restaurant] = await db
-      .select()
-      .from(restaurants)
-      .where(eq(restaurants.slug, restaurantSlug))
-      .limit(1);
+    let restaurant;
+    try {
+      [restaurant] = await db
+        .select()
+        .from(restaurants)
+        .where(eq(restaurants.slug, restaurantSlug))
+        .limit(1);
+    } catch (dbError) {
+      console.error("[SESSION CREATE API] Database query error:", dbError);
+      if (dbError instanceof Error) {
+        console.error("[SESSION CREATE API] DB Error details:", {
+          message: dbError.message,
+          name: dbError.name,
+        });
+      }
+      return NextResponse.json(
+        { error: "Database connection failed. Please try again." },
+        { status: 503 }
+      );
+    }
 
     if (!restaurant) {
       console.error("[SESSION CREATE API] Restaurant not found for slug:", restaurantSlug);
@@ -31,17 +55,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already an active session for this table
-    const [existingSession] = await db
-      .select()
-      .from(tableSessions)
-      .where(
-        and(
-          eq(tableSessions.restaurantId, restaurant.id),
-          eq(tableSessions.tableNumber, tableNumber),
-          eq(tableSessions.status, "active")
+    let existingSession;
+    try {
+      [existingSession] = await db
+        .select()
+        .from(tableSessions)
+        .where(
+          and(
+            eq(tableSessions.restaurantId, restaurant.id),
+            eq(tableSessions.tableNumber, tableNumber),
+            eq(tableSessions.status, "active")
+          )
         )
-      )
-      .limit(1);
+        .limit(1);
+    } catch (dbError) {
+      console.error("[SESSION CREATE API] Error checking existing session:", dbError);
+      // Continue to create new session if check fails
+      existingSession = null;
+    }
 
     if (existingSession) {
       // Return existing session
@@ -59,25 +90,73 @@ export async function POST(request: NextRequest) {
     // Create new session
     const sessionToken = crypto.randomBytes(32).toString("hex");
     
-    const [newSession] = await db
-      .insert(tableSessions)
-      .values({
-        restaurantId: restaurant.id,
-        tableNumber,
-        sessionToken,
-        status: "active",
-      })
-      .returning();
+    try {
+      const [newSession] = await db
+        .insert(tableSessions)
+        .values({
+          restaurantId: restaurant.id,
+          tableNumber,
+          sessionToken,
+          status: "active",
+        })
+        .returning();
 
-    return NextResponse.json({
-      success: true,
-      session: {
-        id: newSession.id,
-        sessionToken: newSession.sessionToken,
-        tableNumber: newSession.tableNumber,
-        status: newSession.status,
-      },
-    }, { status: 201 });
+      if (!newSession) {
+        console.error("[SESSION CREATE API] Insert returned no session");
+        return NextResponse.json(
+          { error: "Failed to create session - no data returned" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        session: {
+          id: newSession.id,
+          sessionToken: newSession.sessionToken,
+          tableNumber: newSession.tableNumber,
+          status: newSession.status,
+        },
+      }, { status: 201 });
+    } catch (dbError) {
+      console.error("[SESSION CREATE API] Database insert error:", dbError);
+      if (dbError instanceof Error) {
+        console.error("[SESSION CREATE API] DB Error message:", dbError.message);
+        console.error("[SESSION CREATE API] DB Error stack:", dbError.stack);
+        
+        // Check for specific database errors
+        if (dbError.message.includes("duplicate") || dbError.message.includes("unique")) {
+          // Session token collision - try again with new token
+          try {
+            const retryToken = crypto.randomBytes(32).toString("hex");
+            const [retrySession] = await db
+              .insert(tableSessions)
+              .values({
+                restaurantId: restaurant.id,
+                tableNumber,
+                sessionToken: retryToken,
+                status: "active",
+              })
+              .returning();
+
+            if (retrySession) {
+              return NextResponse.json({
+                success: true,
+                session: {
+                  id: retrySession.id,
+                  sessionToken: retrySession.sessionToken,
+                  tableNumber: retrySession.tableNumber,
+                  status: retrySession.status,
+                },
+              }, { status: 201 });
+            }
+          } catch (retryError) {
+            console.error("[SESSION CREATE API] Retry also failed:", retryError);
+          }
+        }
+      }
+      throw dbError; // Re-throw to be caught by outer catch
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("[SESSION CREATE API] Validation error:", error.errors);
@@ -87,9 +166,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log detailed error information
     console.error("[SESSION CREATE API] Unexpected error:", error);
+    if (error instanceof Error) {
+      console.error("[SESSION CREATE API] Error message:", error.message);
+      console.error("[SESSION CREATE API] Error stack:", error.stack);
+    }
+
+    // Check for database connection errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("DATABASE_URL") || errorMessage.includes("connection")) {
+      console.error("[SESSION CREATE API] Database connection error detected");
+      return NextResponse.json(
+        { error: "Database connection failed. Please try again later." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to create session" },
+      { 
+        error: "Failed to create session",
+        message: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
