@@ -105,9 +105,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   useEffect(() => {
     if (typeof window === "undefined") return;
     
-    console.log("[CLIENT] useEffect - Session initialization");
-    console.log("[CLIENT] useEffect - tableNumber from URL:", tableNumber);
-    
     // Get initial session data from localStorage
     const getInitialSessionData = (): { token: string | null; table: string | null } => {
       // Store a master key for the current restaurant's active session
@@ -118,7 +115,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         try {
           const { token, table } = JSON.parse(masterData);
           if (token && table) {
-            console.log("[CLIENT] Found master session data - table:", table);
             return { token, table };
           }
         } catch (e) {
@@ -146,7 +142,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           const savedTable = key.replace(prefix, "");
           const savedToken = localStorage.getItem(key);
           if (savedToken && savedTable) {
-            console.log("[CLIENT] Found saved session for table:", savedTable);
             // Store in master key
             localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: savedTable }));
             return { token: savedToken, table: savedTable };
@@ -169,7 +164,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     if (effectiveTable) {
       // If table number was restored from localStorage but not in URL, update URL
       if (!tableNumber && initialData.table) {
-        console.log("[CLIENT] useEffect - Restoring table number to URL:", initialData.table);
         router.replace(`/r/${restaurant.slug}?table=${initialData.table}`, { scroll: false });
       }
       
@@ -178,17 +172,14 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       
       // If we have a token, verify it
       if (savedToken) {
-        console.log("[CLIENT] useEffect - Verifying token with server:", savedToken.substring(0, 8) + "...");
         // Verify the token is still valid
         verifySession(savedToken).then((isValid) => {
           if (isValid) {
-            console.log("[CLIENT] useEffect - Token is valid, ensuring it's set in state");
             // Make sure token is set in state and localStorage
             setSessionToken(savedToken);
             const masterKey = `active_session_${restaurant.slug}`;
             localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
           } else {
-            console.log("[CLIENT] useEffect - Token is invalid, clearing and getting existing session");
             localStorage.removeItem(storageKey);
             const masterKey = `active_session_${restaurant.slug}`;
             localStorage.removeItem(masterKey);
@@ -202,27 +193,21 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           createSession(effectiveTable);
         });
       } else {
-        console.log("[CLIENT] useEffect - No saved token, checking for existing session or creating new");
         // The API will check for existing active sessions and return it if found
         createSession(effectiveTable);
       }
-    } else {
-      console.log("[CLIENT] useEffect - No table number available yet, waiting for user input");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableNumber, restaurant.slug]);
 
   // Listen for order status updates via WebSocket
   const channelName = sessionToken ? `session-${sessionToken}` : null;
-  console.log("[CLIENT] Setting up WebSocket listener - channel:", channelName, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
   
   usePusherChannel(
     channelName,
     "order:status:updated",
     (data: unknown) => {
       const eventData = data as { orderId: string; status: string; tableNumber?: string };
-      console.log("[CLIENT] ✅ Order status update received via WebSocket:", eventData);
-      console.log("[CLIENT] Channel:", channelName, "Order ID:", eventData.orderId, "New Status:", eventData.status);
       
       // Update recent orders list
       setRecentOrders((prev) =>
@@ -253,7 +238,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     "order:created",
     (data: unknown) => {
       const eventData = data as { order: { id: string; status: string; createdAt: string } };
-      console.log("[CLIENT] New order created notification:", eventData);
       if (eventData.order) {
         setRecentOrders((prev) => [eventData.order, ...prev]);
       }
@@ -262,10 +246,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
   const createSession = async (tableNum?: string) => {
     const table = tableNum || tableNumber || inputTableNumber;
-    console.log("[CLIENT] createSession called - tableNumber:", table, "isCreatingSession:", isCreatingSession);
     
     if (!table || isCreatingSession) {
-      console.log("[CLIENT] createSession aborted - tableNumber:", table, "isCreatingSession:", isCreatingSession);
       return;
     }
     
@@ -274,37 +256,29 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       const storageKey = `session_${restaurant.slug}_${table}`;
       const savedToken = localStorage.getItem(storageKey);
       if (savedToken) {
-        console.log("[CLIENT] Found saved token, verifying before creating new session");
         const isValid = await verifySession(savedToken);
         if (isValid) {
-          console.log("[CLIENT] Saved token is valid, using it");
           setSessionToken(savedToken);
           return;
         } else {
-          console.log("[CLIENT] Saved token is invalid, clearing and creating new");
           localStorage.removeItem(storageKey);
         }
       }
     }
     
     setIsCreatingSession(true);
-    console.log("[CLIENT] Starting session creation - restaurantSlug:", restaurant.slug, "tableNumber:", table);
-    console.log("[CLIENT] Note: API will check for existing active session and return it if found");
     
     try {
       const requestBody = {
         restaurantSlug: restaurant.slug,
         tableNumber: table,
       };
-      console.log("[CLIENT] Sending session creation request:", JSON.stringify(requestBody));
       
       const response = await fetch("/api/sessions/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
-
-      console.log("[CLIENT] Session creation response status:", response.status, "ok:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -313,18 +287,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       }
 
       const data = await response.json();
-      console.log("[CLIENT] Session creation response data:", {
-        success: data.success,
-        hasSession: !!data.session,
-        sessionTokenPreview: data.session?.sessionToken?.substring(0, 8) + "...",
-        tableNumber: data.session?.tableNumber,
-        status: data.session?.status
-      });
 
       if (data.success && data.session?.sessionToken) {
         const token = data.session.sessionToken;
         const sessionTable = data.session.tableNumber || table;
-        console.log("[CLIENT] Session obtained successfully (may be existing or new), setting token");
         setSessionToken(token);
         if (typeof window !== "undefined") {
           try {
@@ -333,7 +299,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
             // Store in both specific key and master key for persistence
             window.localStorage.setItem(storageKey, token);
             window.localStorage.setItem(masterKey, JSON.stringify({ token, table: sessionTable }));
-            console.log("[CLIENT] Session token saved to localStorage - key:", storageKey, "master:", masterKey);
             // Update inputTableNumber if it was different
             if (sessionTable && sessionTable !== inputTableNumber) {
               setInputTableNumber(sessionTable);
@@ -352,26 +317,17 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       }
     } catch (error) {
       console.error("[CLIENT] Session creation error:", error);
-      console.error("[CLIENT] Error details:", error instanceof Error ? {
-        message: error.message,
-        stack: error.stack
-      } : error);
       showToast(
         error instanceof Error ? error.message : "Failed to create session",
         "error"
       );
     } finally {
       setIsCreatingSession(false);
-      console.log("[CLIENT] createSession completed");
     }
   };
 
   const sendToKitchen = async () => {
-    console.log("[CLIENT] sendToKitchen called");
-    console.log("[CLIENT] Current state - items:", items.length, "customerName:", customerName, "customerPhone:", customerPhone, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null", "tableNumber:", tableNumber || inputTableNumber);
-    
     if (items.length === 0) {
-      console.log("[CLIENT] sendToKitchen aborted - cart is empty");
       showToast("Please add items to your cart first", "warning");
       return;
     }
@@ -412,8 +368,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           body: JSON.stringify(requestBody),
         });
 
-        console.log("[CLIENT] sendToKitchen - Session creation response status:", sessionResponse.status, "ok:", sessionResponse.ok);
-
         if (!sessionResponse.ok) {
           const errorData = await sessionResponse.json();
           console.error("[CLIENT] sendToKitchen - Session creation failed:", errorData);
@@ -421,17 +375,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         }
 
         const sessionData = await sessionResponse.json();
-        console.log("[CLIENT] sendToKitchen - Session creation response:", {
-          success: sessionData.success,
-          hasSession: !!sessionData.session,
-          sessionTokenPreview: sessionData.session?.sessionToken?.substring(0, 8) + "...",
-          tableNumber: sessionData.session?.tableNumber
-        });
 
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
           const sessionTable = sessionData.session.tableNumber || table;
-          console.log("[CLIENT] sendToKitchen - Session created, token:", token ? token.substring(0, 8) + "..." : "null");
           setSessionToken(token);
           if (sessionTable && token && typeof window !== "undefined") {
             try {
@@ -440,7 +387,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
               // Store in both specific key and master key for persistence
               window.localStorage.setItem(storageKey, token);
               window.localStorage.setItem(masterKey, JSON.stringify({ token, table: sessionTable }));
-              console.log("[CLIENT] sendToKitchen - Token saved to localStorage - key:", storageKey, "master:", masterKey);
               // Update inputTableNumber and URL if needed
               if (sessionTable !== inputTableNumber) {
                 setInputTableNumber(sessionTable);
@@ -472,13 +418,12 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
 
     if (!token) {
-      console.error("[CLIENT] sendToKitchen - No token available after creation attempt");
+        console.error("[CLIENT] sendToKitchen - No token available after creation attempt");
       showToast("Please enter a table number to continue", "error");
       setIsSendingOrder(false);
       return;
     }
 
-    console.log("[CLIENT] sendToKitchen - Proceeding with order creation, token:", token.substring(0, 8) + "...");
     setIsSendingOrder(true);
     try {
       const orderBody = {
@@ -490,20 +435,12 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         customerName: customerName.trim(),
         customerPhone: customerPhone.replace(/\D/g, ""), // Clean phone number
       };
-      console.log("[CLIENT] sendToKitchen - Creating order with:", {
-        sessionToken: token.substring(0, 8) + "...",
-        itemsCount: orderBody.items.length,
-        customerName: orderBody.customerName,
-        customerPhone: orderBody.customerPhone
-      });
 
       const response = await fetch("/api/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderBody),
       });
-
-      console.log("[CLIENT] sendToKitchen - Order creation response status:", response.status, "ok:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -512,16 +449,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       }
 
       const data = await response.json();
-      console.log("[CLIENT] sendToKitchen - Order creation response:", {
-        success: data.success,
-        data: data.data,
-        orderId: data.data?.id
-      });
 
       if (data.success && data.data) {
         const orderId = data.data.id;
         const orderStatus = data.data.status || "pending";
-        console.log("[CLIENT] sendToKitchen - Order created successfully! Order ID:", orderId);
         
         // Add to recent orders
         setRecentOrders((prev) => [
@@ -553,17 +484,12 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       }
     } catch (error) {
       console.error("[CLIENT] sendToKitchen - Order creation error:", error);
-      console.error("[CLIENT] sendToKitchen - Error details:", error instanceof Error ? {
-        message: error.message,
-        stack: error.stack
-      } : error);
       showToast(
         error instanceof Error ? error.message : "Failed to send order",
         "error"
       );
     } finally {
       setIsSendingOrder(false);
-      console.log("[CLIENT] sendToKitchen completed");
     }
   };
 

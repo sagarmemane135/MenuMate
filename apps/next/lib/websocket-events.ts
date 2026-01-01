@@ -56,13 +56,6 @@ export async function emitOrderCreated(
         "order:created",
         eventData
       );
-    } else {
-      // Fallback: Log event (for development or when Pusher not configured)
-      console.log("WebSocket event (order:created):", {
-        channel: `restaurant-${restaurantId}`,
-        event: "order:created",
-        data: eventData,
-      });
     }
   } catch (error) {
     console.error("Failed to emit order:created event:", error);
@@ -90,7 +83,6 @@ export async function emitOrderStatusUpdated(
       });
 
       // Emit to restaurant room (for kitchen staff)
-      console.log("[WEBSOCKET] Emitting to restaurant room:", `restaurant-${restaurantId}`);
       await pusher.trigger(
         `restaurant-${restaurantId}`,
         "order:status:updated",
@@ -100,23 +92,12 @@ export async function emitOrderStatusUpdated(
       // Emit to session room (for customer) if session token exists
       if (sessionToken) {
         const sessionChannel = `session-${sessionToken}`;
-        console.log("[WEBSOCKET] Emitting to session channel:", sessionChannel);
         await pusher.trigger(
           sessionChannel,
           "order:status:updated",
           eventData
         );
-        console.log("[WEBSOCKET] Event emitted to session channel successfully");
-      } else {
-        console.log("[WEBSOCKET] No sessionToken provided, skipping customer notification");
       }
-    } else {
-      // Fallback: Log event
-      console.log("WebSocket event (order:status:updated):", {
-        channels: [`restaurant-${restaurantId}`, sessionToken ? `session-${sessionToken}` : null].filter(Boolean),
-        event: "order:status:updated",
-        data: eventData,
-      });
     }
   } catch (error) {
     console.error("Failed to emit order:status:updated event:", error);
@@ -149,20 +130,11 @@ export async function emitCounterPaymentRequested(
       });
 
       // Emit to restaurant room (for admin)
-      console.log("[WEBSOCKET] Emitting counter payment request to restaurant:", `restaurant-${restaurantId}`);
       await pusher.trigger(
         `restaurant-${restaurantId}`,
         "payment:counter:requested",
         eventData
       );
-      console.log("[WEBSOCKET] Counter payment request event emitted successfully");
-    } else {
-      // Fallback: Log event
-      console.log("WebSocket event (payment:counter:requested):", {
-        channel: `restaurant-${restaurantId}`,
-        event: "payment:counter:requested",
-        data: eventData,
-      });
     }
   } catch (error) {
     console.error("Failed to emit payment:counter:requested event:", error);
@@ -207,15 +179,6 @@ export async function emitCounterPaymentReceived(
         "payment:counter:received",
         eventData
       );
-
-      console.log("[WEBSOCKET] Counter payment received event emitted successfully");
-    } else {
-      // Fallback: Log event
-      console.log("WebSocket event (payment:counter:received):", {
-        channels: [`restaurant-${restaurantId}`, `session-${sessionToken}`],
-        event: "payment:counter:received",
-        data: eventData,
-      });
     }
   } catch (error) {
     console.error("Failed to emit payment:counter:received event:", error);

@@ -71,13 +71,9 @@ export async function PATCH(
         .where(eq(tableSessions.id, updatedOrder.sessionId))
         .limit(1);
       sessionToken = session?.sessionToken || null;
-      console.log("[API] Order status update - sessionId:", updatedOrder.sessionId, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
-    } else {
-      console.log("[API] Order status update - No sessionId for order:", updatedOrder.id);
     }
 
     // Emit WebSocket events for real-time updates
-    console.log("[API] Emitting order status update - restaurantId:", updatedOrder.restaurantId, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
     await emitOrderStatusUpdated(
       updatedOrder.restaurantId,
       sessionToken,
@@ -87,7 +83,6 @@ export async function PATCH(
         tableNumber: updatedOrder.tableNumber,
       }
     );
-    console.log("[API] Order status update event emitted successfully");
 
     return successResponse(
       { order: updatedOrder },

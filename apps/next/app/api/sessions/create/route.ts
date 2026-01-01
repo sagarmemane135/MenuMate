@@ -9,25 +9,18 @@ const createSessionSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  console.log("[SESSION CREATE API] Request received");
   try {
     const body = await request.json();
-    console.log("[SESSION CREATE API] Request body:", JSON.stringify(body));
-    
     const { restaurantSlug, tableNumber } = createSessionSchema.parse(body);
-    console.log("[SESSION CREATE API] Parsed data - restaurantSlug:", restaurantSlug, "tableNumber:", tableNumber);
 
     // Get restaurant by slug
     const { restaurants } = await import("@menumate/db");
-    console.log("[SESSION CREATE API] Querying restaurant with slug:", restaurantSlug);
     
     const [restaurant] = await db
       .select()
       .from(restaurants)
       .where(eq(restaurants.slug, restaurantSlug))
       .limit(1);
-
-    console.log("[SESSION CREATE API] Restaurant found:", restaurant ? `ID: ${restaurant.id}, Name: ${restaurant.name}` : "NOT FOUND");
 
     if (!restaurant) {
       console.error("[SESSION CREATE API] Restaurant not found for slug:", restaurantSlug);
@@ -38,8 +31,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already an active session for this table
-    console.log("[SESSION CREATE API] Checking for existing session - restaurantId:", restaurant.id, "tableNumber:", tableNumber);
-    
     const [existingSession] = await db
       .select()
       .from(tableSessions)
@@ -53,7 +44,6 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (existingSession) {
-      console.log("[SESSION CREATE API] Existing session found:", existingSession.id, "token:", existingSession.sessionToken?.substring(0, 8) + "...");
       // Return existing session
       return NextResponse.json({
         success: true,
@@ -67,9 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new session
-    console.log("[SESSION CREATE API] No existing session found, creating new one");
     const sessionToken = crypto.randomBytes(32).toString("hex");
-    console.log("[SESSION CREATE API] Generated session token:", sessionToken.substring(0, 8) + "...");
     
     const [newSession] = await db
       .insert(tableSessions)
@@ -80,13 +68,6 @@ export async function POST(request: NextRequest) {
         status: "active",
       })
       .returning();
-
-    console.log("[SESSION CREATE API] New session created successfully:", {
-      id: newSession.id,
-      tableNumber: newSession.tableNumber,
-      status: newSession.status,
-      tokenPreview: newSession.sessionToken?.substring(0, 8) + "..."
-    });
 
     return NextResponse.json({
       success: true,
@@ -107,7 +88,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("[SESSION CREATE API] Unexpected error:", error);
-    console.error("[SESSION CREATE API] Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return NextResponse.json(
       { error: "Failed to create session" },
       { status: 500 }
