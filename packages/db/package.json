@@ -7,18 +7,19 @@
     "migrate": "drizzle-kit push:pg",
     "generate": "drizzle-kit generate:pg",
     "studio": "drizzle-kit studio",
-    "migrate:customer-columns": "tsx scripts/run-migration.ts"
+    "migrate:customer-columns": "tsx scripts/run-migration.ts",
+    "migrate:supabase": "tsx scripts/run-supabase-migration.ts"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.29.3",
-    "postgres": "^3.4.3",
-    "bcryptjs": "^2.4.3"
+    "postgres": "^3.4.3"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.11.0",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.20.15",
     "tsx": "^4.7.0"
   }
 }
-
