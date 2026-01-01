@@ -6,7 +6,8 @@
   "scripts": {
     "migrate": "drizzle-kit push:pg",
     "generate": "drizzle-kit generate:pg",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "migrate:customer-columns": "tsx scripts/run-migration.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.29.3",
