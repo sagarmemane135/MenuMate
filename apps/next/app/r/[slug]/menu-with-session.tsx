@@ -42,7 +42,16 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   
   const { addItem, items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
   const { showToast } = useToast();
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  
+  // Initialize session token from localStorage immediately (synchronously)
+  const getInitialSessionToken = (): string | null => {
+    if (typeof window === "undefined" || !tableNumber) return null;
+    const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+    const savedToken = localStorage.getItem(storageKey);
+    return savedToken;
+  };
+  
+  const [sessionToken, setSessionToken] = useState<string | null>(getInitialSessionToken);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isSendingOrder, setIsSendingOrder] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -87,31 +96,43 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
-  // Create or get session on mount if table number provided
+  // Verify and restore session on mount if table number provided
   useEffect(() => {
     console.log("[CLIENT] useEffect - Session initialization");
     console.log("[CLIENT] useEffect - tableNumber:", tableNumber, "restaurant.slug:", restaurant.slug);
+    console.log("[CLIENT] useEffect - Initial sessionToken from state:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
     
     if (tableNumber && typeof window !== "undefined") {
       const storageKey = `session_${restaurant.slug}_${tableNumber}`;
-      console.log("[CLIENT] useEffect - Checking localStorage for key:", storageKey);
-      
       const savedToken = localStorage.getItem(storageKey);
-      console.log("[CLIENT] useEffect - Saved token found:", savedToken ? savedToken.substring(0, 8) + "..." : "null");
       
-      if (savedToken) {
-        console.log("[CLIENT] useEffect - Verifying saved token with server");
-        // Verify the token is still valid before using it
-        verifySession(savedToken).then((isValid) => {
+      // If we have a token (either from initial state or localStorage), verify it
+      const tokenToVerify = sessionToken || savedToken;
+      
+      if (tokenToVerify) {
+        console.log("[CLIENT] useEffect - Verifying token with server:", tokenToVerify.substring(0, 8) + "...");
+        // Verify the token is still valid
+        verifySession(tokenToVerify).then((isValid) => {
           if (isValid) {
-            console.log("[CLIENT] useEffect - Token is valid, using saved token");
-            setSessionToken(savedToken);
+            console.log("[CLIENT] useEffect - Token is valid, ensuring it's set in state");
+            // Make sure token is set in state and localStorage
+            if (sessionToken !== tokenToVerify) {
+              setSessionToken(tokenToVerify);
+            }
+            if (savedToken !== tokenToVerify) {
+              localStorage.setItem(storageKey, tokenToVerify);
+            }
           } else {
-            console.log("[CLIENT] useEffect - Token is invalid, clearing and creating new session");
+            console.log("[CLIENT] useEffect - Token is invalid, clearing and getting existing session");
             localStorage.removeItem(storageKey);
+            setSessionToken(null);
             // The API will check for existing active sessions and return it if found
             createSession();
           }
+        }).catch((error) => {
+          console.error("[CLIENT] useEffect - Error verifying token:", error);
+          // On error, try to get/create session
+          createSession();
         });
       } else {
         console.log("[CLIENT] useEffect - No saved token, checking for existing session or creating new");
