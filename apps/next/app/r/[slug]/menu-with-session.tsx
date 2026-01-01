@@ -218,7 +218,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
-          console.log("[CLIENT] sendToKitchen - Session created, token:", token.substring(0, 8) + "...");
+          console.log("[CLIENT] sendToKitchen - Session created, token:", token ? token.substring(0, 8) + "..." : "null");
           setSessionToken(token);
           if (tableNumber && token && typeof window !== "undefined") {
             try {
