@@ -16,6 +16,7 @@ export default async function AdminDashboard() {
   // Get restaurant for owner/staff
   let restaurant = null;
   let activeSessions: any[] = [];
+  let pendingCounterPayments: any[] = [];
   
   if (user.role !== "super_admin") {
     const [restaurantData] = await db
