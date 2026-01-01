@@ -36,6 +36,7 @@ export async function GET(
         tableNumber: session.tableNumber,
         status: session.status,
         totalAmount: session.totalAmount,
+        paymentMethod: session.paymentMethod,
         paymentStatus: session.paymentStatus,
         customerName: session.customerName,
         customerPhone: session.customerPhone,
