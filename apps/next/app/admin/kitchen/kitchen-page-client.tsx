@@ -100,6 +100,15 @@ export function KitchenPageClient({
       });
 
       if (response.ok) {
+        const result = await response.json();
+        // Update the order in state immediately (WebSocket will also update it, but this ensures instant UI update)
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === orderId
+              ? { ...order, status: status }
+              : order
+          )
+        );
         showToast(`Order marked as ${status}`, "success");
       } else {
         const result = await response.json();

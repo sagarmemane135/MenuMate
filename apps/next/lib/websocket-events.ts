@@ -84,6 +84,7 @@ export async function emitOrderStatusUpdated(
       });
 
       // Emit to restaurant room (for kitchen staff)
+      console.log("[WEBSOCKET] Emitting to restaurant room:", `restaurant-${restaurantId}`);
       await pusher.trigger(
         `restaurant-${restaurantId}`,
         "order:status:updated",
@@ -92,11 +93,16 @@ export async function emitOrderStatusUpdated(
 
       // Emit to session room (for customer) if session token exists
       if (sessionToken) {
+        const sessionChannel = `session-${sessionToken}`;
+        console.log("[WEBSOCKET] Emitting to session channel:", sessionChannel);
         await pusher.trigger(
-          `session-${sessionToken}`,
+          sessionChannel,
           "order:status:updated",
           eventData
         );
+        console.log("[WEBSOCKET] Event emitted to session channel successfully");
+      } else {
+        console.log("[WEBSOCKET] No sessionToken provided, skipping customer notification");
       }
     } else {
       // Fallback: Log event

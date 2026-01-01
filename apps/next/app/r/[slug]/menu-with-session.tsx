@@ -46,11 +46,31 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const getInitialSessionData = (): { token: string | null; table: string | null } => {
     if (typeof window === "undefined") return { token: null, table: null };
     
+    // Store a master key for the current restaurant's active session
+    const masterKey = `active_session_${restaurant.slug}`;
+    const masterData = localStorage.getItem(masterKey);
+    
+    if (masterData) {
+      try {
+        const { token, table } = JSON.parse(masterData);
+        if (token && table) {
+          console.log("[CLIENT] Found master session data - table:", table);
+          return { token, table };
+        }
+      } catch (e) {
+        console.warn("[CLIENT] Failed to parse master session data:", e);
+      }
+    }
+    
     // First, try to get table number from URL
     if (tableNumber) {
       const storageKey = `session_${restaurant.slug}_${tableNumber}`;
       const savedToken = localStorage.getItem(storageKey);
-      return { token: savedToken, table: tableNumber };
+      if (savedToken) {
+        // Also store in master key for easier retrieval
+        localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: tableNumber }));
+        return { token: savedToken, table: tableNumber };
+      }
     }
     
     // If no table number in URL, try to find any saved session for this restaurant
@@ -63,6 +83,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         const savedToken = localStorage.getItem(key);
         if (savedToken && savedTable) {
           console.log("[CLIENT] Found saved session for table:", savedTable);
+          // Store in master key
+          localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: savedTable }));
           return { token: savedToken, table: savedTable };
         }
       }
@@ -290,8 +312,11 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         if (typeof window !== "undefined") {
           try {
             const storageKey = `session_${restaurant.slug}_${sessionTable}`;
+            const masterKey = `active_session_${restaurant.slug}`;
+            // Store in both specific key and master key for persistence
             window.localStorage.setItem(storageKey, token);
-            console.log("[CLIENT] Session token saved to localStorage with key:", storageKey);
+            window.localStorage.setItem(masterKey, JSON.stringify({ token, table: sessionTable }));
+            console.log("[CLIENT] Session token saved to localStorage - key:", storageKey, "master:", masterKey);
             // Update inputTableNumber if it was different
             if (sessionTable && sessionTable !== inputTableNumber) {
               setInputTableNumber(sessionTable);
@@ -394,8 +419,11 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           if (sessionTable && token && typeof window !== "undefined") {
             try {
               const storageKey = `session_${restaurant.slug}_${sessionTable}`;
+              const masterKey = `active_session_${restaurant.slug}`;
+              // Store in both specific key and master key for persistence
               window.localStorage.setItem(storageKey, token);
-              console.log("[CLIENT] sendToKitchen - Token saved to localStorage:", storageKey);
+              window.localStorage.setItem(masterKey, JSON.stringify({ token, table: sessionTable }));
+              console.log("[CLIENT] sendToKitchen - Token saved to localStorage - key:", storageKey, "master:", masterKey);
               // Update inputTableNumber and URL if needed
               if (sessionTable !== inputTableNumber) {
                 setInputTableNumber(sessionTable);
