@@ -110,6 +110,24 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    // Update session totalAmount immediately (even if not paid)
+    const sessionOrders = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.sessionId, session.id));
+
+    const sessionTotal = sessionOrders.reduce(
+      (sum, order) => sum + Number(order.totalAmount),
+      0
+    );
+
+    await db
+      .update(tableSessions)
+      .set({
+        totalAmount: sessionTotal.toString(),
+      })
+      .where(eq(tableSessions.id, session.id));
+
     // Emit WebSocket event to restaurant room (for kitchen staff)
     const orderData = {
       id: newOrder.id,
@@ -120,11 +138,11 @@ export async function POST(request: NextRequest) {
         price: number;
       }>,
       totalAmount: newOrder.totalAmount,
-      status: newOrder.status,
+      status: newOrder.status as "pending" | "cooking" | "ready" | "served" | "paid" | "cancelled",
       tableNumber: session.tableNumber,
       customerName: validatedData.customerName,
-      createdAt: newOrder.createdAt,
       notes: newOrder.notes,
+      createdAt: newOrder.createdAt instanceof Date ? newOrder.createdAt.toISOString() : newOrder.createdAt,
     };
     await emitOrderCreated(session.restaurantId, {
       order: orderData,
@@ -135,7 +153,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Also emit to session channel for customer
-    const { emitOrderStatusUpdated } = await import("@/lib/websocket-events");
+    const { emitOrderStatusUpdated, emitSessionUpdated } = await import("@/lib/websocket-events");
     await emitOrderStatusUpdated(
       session.restaurantId,
       session.sessionToken,
@@ -143,6 +161,18 @@ export async function POST(request: NextRequest) {
         orderId: newOrder.id,
         status: newOrder.status,
         tableNumber: session.tableNumber,
+      }
+    );
+
+    // Emit session updated event (for sessions page and customer)
+    await emitSessionUpdated(
+      session.restaurantId,
+      session.sessionToken,
+      {
+        sessionId: session.id,
+        tableNumber: session.tableNumber,
+        totalAmount: sessionTotal.toString(),
+        ordersCount: sessionOrders.length,
       }
     );
 

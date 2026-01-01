@@ -43,7 +43,18 @@ export function KitchenPageClient({
     "order:created",
     (data: unknown) => {
       const eventData = data as { order: Order; session: { id: string; tableNumber: string } };
-      setOrders((prev) => [eventData.order, ...prev]);
+      // Ensure order data matches Order interface
+      const newOrder: Order = {
+        id: eventData.order.id,
+        items: eventData.order.items,
+        status: eventData.order.status,
+        tableNumber: eventData.order.tableNumber,
+        totalAmount: eventData.order.totalAmount,
+        customerName: eventData.order.customerName,
+        notes: eventData.order.notes || null,
+        createdAt: eventData.order.createdAt,
+      };
+      setOrders((prev) => [newOrder, ...prev]);
       playNotificationSound();
       showToast(`New order from Table ${eventData.session.tableNumber}!`, "info");
     }

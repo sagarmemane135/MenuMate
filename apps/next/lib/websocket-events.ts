@@ -186,3 +186,47 @@ export async function emitCounterPaymentReceived(
   }
 }
 
+/**
+ * Emit session updated event (when session total or orders change)
+ */
+export async function emitSessionUpdated(
+  restaurantId: string,
+  sessionToken: string,
+  eventData: {
+    sessionId: string;
+    tableNumber: string;
+    totalAmount: string;
+    ordersCount: number;
+  }
+) {
+  try {
+    // Use Pusher for Vercel deployment
+    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+      const pusher = new Pusher({
+        appId: process.env.PUSHER_APP_ID,
+        key: process.env.PUSHER_KEY,
+        secret: process.env.PUSHER_SECRET,
+        cluster: process.env.PUSHER_CLUSTER || "ap2",
+        useTLS: true,
+      });
+
+      // Emit to restaurant room (for admin/sessions page)
+      await pusher.trigger(
+        `restaurant-${restaurantId}`,
+        "session:updated",
+        eventData
+      );
+
+      // Emit to session room (for customer)
+      await pusher.trigger(
+        `session-${sessionToken}`,
+        "session:updated",
+        eventData
+      );
+    }
+  } catch (error) {
+    console.error("Failed to emit session:updated event:", error);
+    // Don't fail the request if WebSocket emission fails
+  }
+}
+

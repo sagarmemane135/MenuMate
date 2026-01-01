@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { Users, Calendar, CreditCard, Store, CheckCircle2, Clock, Eye, X, Receipt } from "lucide-react";
 import { formatIndianDateTime } from "@/lib/date-utils";
+import { usePusherChannel } from "@/lib/pusher-client";
 
 interface Session {
   id: string;
@@ -36,6 +37,32 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [filter, setFilter] = useState<"all" | "active" | "closed" | "paid">("all");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const { showToast } = useToast();
+
+  // Listen for session updates (when orders are added, totals change)
+  usePusherChannel(
+    `restaurant-${restaurantId}`,
+    "session:updated",
+    (data: unknown) => {
+      const eventData = data as {
+        sessionId: string;
+        tableNumber: string;
+        totalAmount: string;
+        ordersCount: number;
+      };
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === eventData.sessionId
+            ? {
+                ...session,
+                totalAmount: eventData.totalAmount,
+                ordersCount: eventData.ordersCount,
+              }
+            : session
+        )
+      );
+    }
+  );
   const [sessionDetails, setSessionDetails] = useState<{
     session: Session;
     orders: Array<{
@@ -49,7 +76,6 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
     }>;
   } | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const { showToast } = useToast();
 
   const filteredSessions = sessions.filter((session) => {
     if (filter === "all") return true;
