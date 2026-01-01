@@ -46,11 +46,16 @@ export function subscribeToChannel(
 
   const channel = pusher.subscribe(channelName);
 
+  channel.bind("pusher:subscription_succeeded", () => {
+    console.log(`[PUSHER] ✅ Successfully subscribed to channel: ${channelName}`);
+  });
+
   channel.bind("pusher:subscription_error", (error: unknown) => {
     console.error(`[PUSHER] ❌ Subscription error for channel ${channelName}:`, error);
   });
 
   channel.bind(eventName, (data: unknown) => {
+    console.log(`[PUSHER] 📨 Received event "${eventName}" on channel "${channelName}":`, data);
     callback(data);
   });
 

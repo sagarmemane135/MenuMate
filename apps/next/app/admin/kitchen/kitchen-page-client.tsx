@@ -43,12 +43,21 @@ export function KitchenPageClient({
     ordersRef.current = orders;
   }, [orders]);
 
+  // Debug: Log initial orders
+  useEffect(() => {
+    console.log("[KDS] Initial orders loaded:", initialOrders.length, initialOrders);
+    console.log("[KDS] Restaurant ID:", restaurantId);
+    console.log("[KDS] Listening on channel:", `restaurant-${restaurantId}`);
+  }, []);
+
   // Listen for new orders
   usePusherChannel(
     `restaurant-${restaurantId}`,
     "order:created",
     (data: unknown) => {
+      console.log("[KDS] Received order:created event:", data);
       const eventData = data as { order: Order; session: { id: string; tableNumber: string } };
+      
       // Ensure order data matches Order interface
       const newOrder: Order = {
         id: eventData.order.id,
@@ -60,7 +69,18 @@ export function KitchenPageClient({
         notes: eventData.order.notes || null,
         createdAt: eventData.order.createdAt,
       };
-      setOrders((prev) => [newOrder, ...prev]);
+      
+      console.log("[KDS] Adding new order to state:", newOrder);
+      setOrders((prev) => {
+        // Check if order already exists to prevent duplicates
+        const exists = prev.find((o) => o.id === newOrder.id);
+        if (exists) {
+          console.log("[KDS] Order already exists, skipping:", newOrder.id);
+          return prev;
+        }
+        console.log("[KDS] Adding order, new count:", prev.length + 1);
+        return [newOrder, ...prev];
+      });
       playNotificationSound();
       showToast(`New order from Table ${eventData.session.tableNumber}!`, "info");
     }

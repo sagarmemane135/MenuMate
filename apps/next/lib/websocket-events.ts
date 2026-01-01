@@ -51,11 +51,16 @@ export async function emitOrderCreated(
         useTLS: true,
       });
 
+      console.log("[WS] Triggering order:created on channel:", `restaurant-${restaurantId}`);
+      console.log("[WS] Event data:", JSON.stringify(eventData, null, 2));
+      
       await pusher.trigger(
         `restaurant-${restaurantId}`,
         "order:created",
         eventData
       );
+      
+      console.log("[WS] ✅ Order:created event triggered successfully");
     }
   } catch (error) {
     console.error("Failed to emit order:created event:", error);
@@ -211,11 +216,16 @@ export async function emitSessionUpdated(
       });
 
       // Emit to restaurant room (for admin/sessions page)
+      console.log("[WS] Triggering session:updated on channel:", `restaurant-${restaurantId}`);
+      console.log("[WS] Session update data:", JSON.stringify(eventData, null, 2));
+      
       await pusher.trigger(
         `restaurant-${restaurantId}`,
         "session:updated",
         eventData
       );
+      
+      console.log("[WS] ✅ Session:updated event triggered successfully");
 
       // Emit to session room (for customer)
       await pusher.trigger(

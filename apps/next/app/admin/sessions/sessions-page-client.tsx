@@ -44,14 +44,16 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
     `restaurant-${restaurantId}`,
     "session:updated",
     (data: unknown) => {
+      console.log("[SESSIONS] Received session:updated event:", data);
       const eventData = data as {
         sessionId: string;
         tableNumber: string;
         totalAmount: string;
         ordersCount: number;
       };
-      setSessions((prev) =>
-        prev.map((session) =>
+      console.log("[SESSIONS] Updating session:", eventData.sessionId, "with total:", eventData.totalAmount);
+      setSessions((prev) => {
+        const updated = prev.map((session) =>
           session.id === eventData.sessionId
             ? {
                 ...session,
@@ -59,8 +61,10 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                 ordersCount: eventData.ordersCount,
               }
             : session
-        )
-      );
+        );
+        console.log("[SESSIONS] Updated sessions:", updated);
+        return updated;
+      });
     }
   );
   const [sessionDetails, setSessionDetails] = useState<{
