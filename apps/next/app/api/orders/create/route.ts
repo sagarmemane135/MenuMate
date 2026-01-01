@@ -108,6 +108,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Also emit to session channel for customer
+    const { emitOrderStatusUpdated } = await import("@/lib/websocket-events");
+    await emitOrderStatusUpdated(
+      session.restaurantId,
+      session.sessionToken,
+      {
+        orderId: newOrder.id,
+        status: newOrder.status,
+        tableNumber: session.tableNumber,
+      }
+    );
+
     return createdResponse(
       {
         id: newOrder.id,

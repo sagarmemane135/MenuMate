@@ -51,6 +51,11 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [inputTableNumber, setInputTableNumber] = useState(tableNumber || "");
+  const [recentOrders, setRecentOrders] = useState<Array<{
+    id: string;
+    status: string;
+    createdAt: string;
+  }>>([]);
 
   // Validate phone number (10 digits for Indian numbers)
   const validatePhone = (phone: string): boolean => {
@@ -96,15 +101,41 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     sessionToken ? `session-${sessionToken}` : null,
     "order:status:updated",
     (data: unknown) => {
-      const eventData = data as { orderId: string; status: string };
+      const eventData = data as { orderId: string; status: string; tableNumber?: string };
+      console.log("[CLIENT] Order status update received:", eventData);
+      
+      // Update recent orders list
+      setRecentOrders((prev) =>
+        prev.map((order) =>
+          order.id === eventData.orderId
+            ? { ...order, status: eventData.status }
+            : order
+        )
+      );
+
       const statusMessages: Record<string, string> = {
+        pending: "Order received! 📝",
         cooking: "Your order is being prepared! 👨‍🍳",
         ready: "Your order is ready! 🎉",
         paid: "Payment received! Thank you! ✅",
+        cancelled: "Order cancelled ❌",
       };
 
       if (statusMessages[eventData.status]) {
         showToast(statusMessages[eventData.status], "info");
+      }
+    }
+  );
+
+  // Listen for new orders created
+  usePusherChannel(
+    sessionToken ? `session-${sessionToken}` : null,
+    "order:created",
+    (data: unknown) => {
+      const eventData = data as { order: { id: string; status: string; createdAt: string } };
+      console.log("[CLIENT] New order created notification:", eventData);
+      if (eventData.order) {
+        setRecentOrders((prev) => [eventData.order, ...prev]);
       }
     }
   );
@@ -323,13 +354,27 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       const data = await response.json();
       console.log("[CLIENT] sendToKitchen - Order creation response:", {
         success: data.success,
-        orderId: data.order?.id
+        data: data.data,
+        orderId: data.data?.id
       });
 
-      if (data.success) {
-        console.log("[CLIENT] sendToKitchen - Order created successfully!");
+      if (data.success && data.data) {
+        const orderId = data.data.id;
+        const orderStatus = data.data.status || "pending";
+        console.log("[CLIENT] sendToKitchen - Order created successfully! Order ID:", orderId);
+        
+        // Add to recent orders
+        setRecentOrders((prev) => [
+          {
+            id: orderId,
+            status: orderStatus,
+            createdAt: data.data.createdAt || new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+        
         showToast(
-          `Order sent to kitchen! Order #${data.order.id.slice(0, 8).toUpperCase()}`,
+          `Order sent to kitchen! Order #${orderId.slice(0, 8).toUpperCase()}`,
           "success"
         );
         clearCart();
@@ -337,9 +382,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         setCustomerName("");
         setCustomerPhone("");
         setShowCart(false);
+        // Keep the page open to show order status updates
       } else {
-        console.error("[CLIENT] sendToKitchen - Order creation returned success:false");
-        throw new Error(data.error || "Failed to send order");
+        console.error("[CLIENT] sendToKitchen - Order creation returned success:false or no data");
+        throw new Error(data.error || data.message || "Failed to send order");
       }
     } catch (error) {
       console.error("[CLIENT] sendToKitchen - Order creation error:", error);
@@ -422,6 +468,60 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
             </div>
           </div>
         </header>
+
+        {/* Order Status Banner */}
+        {recentOrders.length > 0 && (
+          <div className="px-3 py-2 bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                <span className="text-xs font-semibold text-orange-900">
+                  {recentOrders.length} Active Order{recentOrders.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              {sessionToken && (
+                <a
+                  href={`/bill?session=${sessionToken}`}
+                  className="text-xs font-semibold text-orange-600 hover:text-orange-700"
+                >
+                  View All →
+                </a>
+              )}
+            </div>
+            <div className="mt-2 space-y-1">
+              {recentOrders.slice(0, 2).map((order) => {
+                const statusColors: Record<string, string> = {
+                  pending: "bg-yellow-100 text-yellow-800",
+                  cooking: "bg-blue-100 text-blue-800",
+                  ready: "bg-green-100 text-green-800",
+                  paid: "bg-gray-100 text-gray-800",
+                  cancelled: "bg-red-100 text-red-800",
+                };
+                const statusLabels: Record<string, string> = {
+                  pending: "Pending",
+                  cooking: "Cooking",
+                  ready: "Ready",
+                  paid: "Paid",
+                  cancelled: "Cancelled",
+                };
+                return (
+                  <div key={order.id} className="flex items-center justify-between text-xs">
+                    <span className="font-mono text-gray-600">
+                      #{order.id.slice(0, 8).toUpperCase()}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-semibold ${
+                        statusColors[order.status] || "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {statusLabels[order.status] || order.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Main Content - Mobile Optimized */}
         <main className="px-3 py-4">
