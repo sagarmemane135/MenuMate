@@ -7,20 +7,25 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  try {
+    const user = await getCurrentUser();
 
-  if (!user) {
+    if (!user) {
+      redirect("/login");
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50">
+        <AdminNav userRole={user.role} userEmail={user.email} />
+
+        <main className="max-w-7xl mx-auto py-4 px-4 sm:py-8 sm:px-6 lg:px-8">
+          {children}
+        </main>
+      </div>
+    );
+  } catch (error) {
+    console.error("AdminLayout error:", error);
     redirect("/login");
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50">
-      <AdminNav userRole={user.role} userEmail={user.email} />
-
-      <main className="max-w-7xl mx-auto py-4 px-4 sm:py-8 sm:px-6 lg:px-8">
-        {children}
-      </main>
-    </div>
-  );
 }
 

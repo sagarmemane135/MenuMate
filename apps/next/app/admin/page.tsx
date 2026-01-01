@@ -7,128 +7,157 @@ import { DashboardClient } from "./dashboard-client";
 import { Users, CheckCircle, Clock, UtensilsCrossed, ClipboardList, BarChart3 } from "lucide-react";
 
 export default async function AdminDashboard() {
-  const user = await getCurrentUser();
+  try {
+    const user = await getCurrentUser();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Get restaurant for owner/staff
-  let restaurant = null;
-  let activeSessions: any[] = [];
-  let pendingCounterPayments: any[] = [];
-  
-  if (user.role !== "super_admin") {
-    const [restaurantData] = await db
-      .select()
-      .from(restaurants)
-      .where(eq(restaurants.ownerId, user.userId))
-      .limit(1);
-
-    restaurant = restaurantData;
-
-    // Fetch active sessions for this restaurant
-    if (restaurant) {
-      const { tableSessions, and } = await import("@menumate/db");
-      const activeSessionsData = await db
-        .select()
-        .from(tableSessions)
-        .where(
-          and(
-            eq(tableSessions.restaurantId, restaurant.id),
-            eq(tableSessions.status, "active")
-          )
-        );
-      
-      // Serialize dates for client component
-      activeSessions = activeSessionsData.map((session) => ({
-        ...session,
-        startedAt: session.startedAt instanceof Date ? session.startedAt.toISOString() : session.startedAt,
-        closedAt: session.closedAt instanceof Date ? session.closedAt.toISOString() : session.closedAt,
-      }));
-      
-      // Fetch pending counter payments
-      const pendingPaymentsData = await db
-        .select()
-        .from(tableSessions)
-        .where(
-          and(
-            eq(tableSessions.restaurantId, restaurant.id),
-            eq(tableSessions.paymentMethod, "counter"),
-            eq(tableSessions.paymentStatus, "pending")
-          )
-        );
-      
-      // Serialize dates for client component
-      pendingCounterPayments = pendingPaymentsData.map((payment) => ({
-        ...payment,
-        startedAt: payment.startedAt instanceof Date ? payment.startedAt.toISOString() : payment.startedAt,
-        closedAt: payment.closedAt instanceof Date ? payment.closedAt.toISOString() : payment.closedAt,
-      }));
+    if (!user) {
+      redirect("/login");
     }
-  }
 
-  // For super admin: get all restaurants and stats
-  let allRestaurants: Array<{
-    id: string;
-    name: string;
-    slug: string;
-    isActive: boolean;
-    ownerId: string;
-  }> = [];
-  let stats: {
-    totalRestaurantAdmins: number;
-    approvedRestaurantAdmins: number;
-    pendingRestaurantAdmins: number;
-    totalRestaurants: number;
-    activeRestaurants: number;
-  } | null = null;
-  if (user.role === "super_admin") {
-    const restaurantsList = await db
-      .select({
-        id: restaurants.id,
-        name: restaurants.name,
-        slug: restaurants.slug,
-        isActive: restaurants.isActive,
-        ownerId: restaurants.ownerId,
-      })
-      .from(restaurants);
+    // Get restaurant for owner/staff
+    let restaurant = null;
+    let activeSessions: any[] = [];
+    let pendingCounterPayments: any[] = [];
     
-    // Sort restaurants by name
-    allRestaurants = restaurantsList.sort((a, b) => 
-      a.name.localeCompare(b.name)
-    );
+    if (user.role !== "super_admin") {
+      try {
+        const [restaurantData] = await db
+          .select()
+          .from(restaurants)
+          .where(eq(restaurants.ownerId, user.userId))
+          .limit(1);
 
-    // Get statistics - exclude super_admin users (they are platform admins, not restaurant admins)
-    const allUsers = await db.select().from(users);
-    const restaurantAdmins = allUsers.filter((u) => u.role !== "super_admin");
-    const totalRestaurantAdminsCount = restaurantAdmins.length;
-    const approvedRestaurantAdminsCount = restaurantAdmins.filter((u) => u.status === "approved").length;
-    const pendingRestaurantAdminsCount = restaurantAdmins.filter((u) => u.status === "pending").length;
+        restaurant = restaurantData;
 
-    stats = {
-      totalRestaurantAdmins: totalRestaurantAdminsCount,
-      approvedRestaurantAdmins: approvedRestaurantAdminsCount,
-      pendingRestaurantAdmins: pendingRestaurantAdminsCount,
-      totalRestaurants: allRestaurants.length,
-      activeRestaurants: allRestaurants.filter((r) => r.isActive).length,
-    };
-  }
+        // Fetch active sessions for this restaurant
+        if (restaurant) {
+          try {
+            const { tableSessions, and } = await import("@menumate/db");
+            const activeSessionsData = await db
+              .select()
+              .from(tableSessions)
+              .where(
+                and(
+                  eq(tableSessions.restaurantId, restaurant.id),
+                  eq(tableSessions.status, "active")
+                )
+              );
+            
+            // Serialize dates for client component
+            activeSessions = activeSessionsData.map((session) => ({
+              ...session,
+              startedAt: session.startedAt instanceof Date ? session.startedAt.toISOString() : session.startedAt,
+              closedAt: session.closedAt instanceof Date ? session.closedAt.toISOString() : session.closedAt,
+            }));
+          } catch (error) {
+            console.error("Error fetching active sessions:", error);
+            activeSessions = [];
+          }
+          
+          // Fetch pending counter payments
+          try {
+            const { tableSessions, and } = await import("@menumate/db");
+            const pendingPaymentsData = await db
+              .select()
+              .from(tableSessions)
+              .where(
+                and(
+                  eq(tableSessions.restaurantId, restaurant.id),
+                  eq(tableSessions.paymentMethod, "counter"),
+                  eq(tableSessions.paymentStatus, "pending")
+                )
+              );
+            
+            // Serialize dates for client component
+            pendingCounterPayments = pendingPaymentsData.map((payment) => ({
+              ...payment,
+              startedAt: payment.startedAt instanceof Date ? payment.startedAt.toISOString() : payment.startedAt,
+              closedAt: payment.closedAt instanceof Date ? payment.closedAt.toISOString() : payment.closedAt,
+            }));
+          } catch (error) {
+            console.error("Error fetching pending counter payments:", error);
+            pendingCounterPayments = [];
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching restaurant:", error);
+        restaurant = null;
+      }
+    }
 
-  return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
-          {user.role === "super_admin" ? "Platform Admin" : "Dashboard"}
-        </h1>
-        <p className="mt-2 sm:mt-3 text-base sm:text-lg text-slate-600">
-          {user.role === "super_admin" 
-            ? "Manage restaurants and admins" 
-            : `Welcome back!`}
-        </p>
-      </div>
+    // For super admin: get all restaurants and stats
+    let allRestaurants: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      isActive: boolean;
+      ownerId: string;
+    }> = [];
+    let stats: {
+      totalRestaurantAdmins: number;
+      approvedRestaurantAdmins: number;
+      pendingRestaurantAdmins: number;
+      totalRestaurants: number;
+      activeRestaurants: number;
+    } | null = null;
+    if (user.role === "super_admin") {
+      try {
+        const restaurantsList = await db
+          .select({
+            id: restaurants.id,
+            name: restaurants.name,
+            slug: restaurants.slug,
+            isActive: restaurants.isActive,
+            ownerId: restaurants.ownerId,
+          })
+          .from(restaurants);
+        
+        // Sort restaurants by name
+        allRestaurants = restaurantsList.sort((a, b) => 
+          a.name.localeCompare(b.name)
+        );
 
-      {user.role === "super_admin" ? (
+        // Get statistics - exclude super_admin users (they are platform admins, not restaurant admins)
+        const allUsers = await db.select().from(users);
+        const restaurantAdmins = allUsers.filter((u) => u.role !== "super_admin");
+        const totalRestaurantAdminsCount = restaurantAdmins.length;
+        const approvedRestaurantAdminsCount = restaurantAdmins.filter((u) => u.status === "approved").length;
+        const pendingRestaurantAdminsCount = restaurantAdmins.filter((u) => u.status === "pending").length;
+
+        stats = {
+          totalRestaurantAdmins: totalRestaurantAdminsCount,
+          approvedRestaurantAdmins: approvedRestaurantAdminsCount,
+          pendingRestaurantAdmins: pendingRestaurantAdminsCount,
+          totalRestaurants: allRestaurants.length,
+          activeRestaurants: allRestaurants.filter((r) => r.isActive).length,
+        };
+      } catch (error) {
+        console.error("Error fetching super admin data:", error);
+        allRestaurants = [];
+        stats = {
+          totalRestaurantAdmins: 0,
+          approvedRestaurantAdmins: 0,
+          pendingRestaurantAdmins: 0,
+          totalRestaurants: 0,
+          activeRestaurants: 0,
+        };
+      }
+    }
+
+    return (
+      <div className="px-4 py-6 sm:px-0">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+            {user.role === "super_admin" ? "Platform Admin" : "Dashboard"}
+          </h1>
+          <p className="mt-2 sm:mt-3 text-base sm:text-lg text-slate-600">
+            {user.role === "super_admin" 
+              ? "Manage restaurants and admins" 
+              : `Welcome back!`}
+          </p>
+        </div>
+
+        {user.role === "super_admin" ? (
         <div className="space-y-6">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -299,7 +328,20 @@ export default async function AdminDashboard() {
         />
       )}
     </div>
-  );
+    );
+  } catch (error) {
+    console.error("AdminDashboard error:", error);
+    return (
+      <div className="px-4 py-6 sm:px-0">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Error Loading Dashboard</h2>
+          <p className="text-red-600">
+            An error occurred while loading the dashboard. Please try refreshing the page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }
 
 
