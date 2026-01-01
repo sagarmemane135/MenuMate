@@ -40,8 +40,7 @@ export default async function AdminDashboard() {
         );
       
       // Fetch pending counter payments
-      const { or } = await import("@menumate/db");
-      const pendingCounterPayments = await db
+      pendingCounterPayments = await db
         .select()
         .from(tableSessions)
         .where(
@@ -51,16 +50,6 @@ export default async function AdminDashboard() {
             eq(tableSessions.paymentStatus, "pending")
           )
         );
-      
-      // Pass pending payments to dashboard client
-      return (
-        <DashboardClient
-          restaurant={restaurant}
-          userEmail={user.email}
-          activeSessions={activeSessions}
-          pendingCounterPayments={pendingCounterPayments}
-        />
-      );
     }
   }
 
@@ -287,7 +276,12 @@ export default async function AdminDashboard() {
           </Card>
         </div>
       ) : (
-        <DashboardClient restaurant={restaurant} userEmail={user.email} activeSessions={activeSessions} />
+        <DashboardClient 
+          restaurant={restaurant} 
+          userEmail={user.email} 
+          activeSessions={activeSessions}
+          pendingCounterPayments={pendingCounterPayments}
+        />
       )}
     </div>
   );
