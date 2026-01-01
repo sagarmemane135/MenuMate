@@ -51,13 +51,25 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
   // Create or get session on mount if table number provided
   useEffect(() => {
+    console.log("[CLIENT] useEffect - Session initialization");
+    console.log("[CLIENT] useEffect - tableNumber:", tableNumber, "restaurant.slug:", restaurant.slug);
+    
     if (tableNumber && typeof window !== "undefined") {
-      const savedToken = localStorage.getItem(`session_${restaurant.slug}_${tableNumber}`);
+      const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+      console.log("[CLIENT] useEffect - Checking localStorage for key:", storageKey);
+      
+      const savedToken = localStorage.getItem(storageKey);
+      console.log("[CLIENT] useEffect - Saved token found:", savedToken ? savedToken.substring(0, 8) + "..." : "null");
+      
       if (savedToken) {
+        console.log("[CLIENT] useEffect - Using saved token");
         setSessionToken(savedToken);
       } else {
+        console.log("[CLIENT] useEffect - No saved token, creating new session");
         createSession();
       }
+    } else {
+      console.log("[CLIENT] useEffect - Skipping session creation - tableNumber:", tableNumber, "window:", typeof window);
     }
   }, [tableNumber, restaurant.slug]);
 
@@ -80,95 +92,153 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   );
 
   const createSession = async () => {
-    if (!tableNumber || isCreatingSession) return;
+    console.log("[CLIENT] createSession called - tableNumber:", tableNumber, "isCreatingSession:", isCreatingSession);
+    
+    if (!tableNumber || isCreatingSession) {
+      console.log("[CLIENT] createSession aborted - tableNumber:", tableNumber, "isCreatingSession:", isCreatingSession);
+      return;
+    }
     
     setIsCreatingSession(true);
+    console.log("[CLIENT] Starting session creation - restaurantSlug:", restaurant.slug, "tableNumber:", tableNumber);
+    
     try {
+      const requestBody = {
+        restaurantSlug: restaurant.slug,
+        tableNumber,
+      };
+      console.log("[CLIENT] Sending session creation request:", JSON.stringify(requestBody));
+      
       const response = await fetch("/api/sessions/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantSlug: restaurant.slug,
-          tableNumber,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log("[CLIENT] Session creation response status:", response.status, "ok:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("[CLIENT] Session creation failed - status:", response.status, "error:", errorData);
         throw new Error(errorData.error || "Failed to create session");
       }
 
       const data = await response.json();
+      console.log("[CLIENT] Session creation response data:", {
+        success: data.success,
+        hasSession: !!data.session,
+        sessionTokenPreview: data.session?.sessionToken?.substring(0, 8) + "...",
+        tableNumber: data.session?.tableNumber
+      });
+
       if (data.success && data.session?.sessionToken) {
+        console.log("[CLIENT] Session created successfully, setting token");
         setSessionToken(data.session.sessionToken);
         if (typeof window !== "undefined") {
           try {
-            window.localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, data.session.sessionToken);
+            const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+            window.localStorage.setItem(storageKey, data.session.sessionToken);
+            console.log("[CLIENT] Session token saved to localStorage with key:", storageKey);
           } catch (e) {
-            console.warn("Failed to save session to localStorage:", e);
+            console.warn("[CLIENT] Failed to save session to localStorage:", e);
           }
         }
       } else {
+        console.error("[CLIENT] Invalid response format - success:", data.success, "hasSession:", !!data.session, "hasToken:", !!data.session?.sessionToken);
         throw new Error(data.error || "Failed to create session");
       }
     } catch (error) {
-      console.error("Session creation error:", error);
+      console.error("[CLIENT] Session creation error:", error);
+      console.error("[CLIENT] Error details:", error instanceof Error ? {
+        message: error.message,
+        stack: error.stack
+      } : error);
       showToast(
         error instanceof Error ? error.message : "Failed to create session",
         "error"
       );
     } finally {
       setIsCreatingSession(false);
+      console.log("[CLIENT] createSession completed");
     }
   };
 
   const sendToKitchen = async () => {
+    console.log("[CLIENT] sendToKitchen called");
+    console.log("[CLIENT] Current state - items:", items.length, "customerName:", customerName, "customerPhone:", customerPhone, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null", "tableNumber:", tableNumber);
+    
     if (items.length === 0) {
+      console.log("[CLIENT] sendToKitchen aborted - cart is empty");
       showToast("Please add items to your cart first", "warning");
       return;
     }
 
     if (!customerName.trim() || !customerPhone.trim()) {
+      console.log("[CLIENT] sendToKitchen - showing customer form");
       setShowCustomerForm(true);
       return;
     }
 
     // If no session token, create one first
     let token: string | null = sessionToken;
+    console.log("[CLIENT] sendToKitchen - current token:", token ? token.substring(0, 8) + "..." : "null");
+    
     if (!token && tableNumber) {
+      console.log("[CLIENT] sendToKitchen - No token, creating session first");
       setIsSendingOrder(true);
       showToast("Creating session...", "info");
       try {
+        const requestBody = {
+          restaurantSlug: restaurant.slug,
+          tableNumber,
+        };
+        console.log("[CLIENT] sendToKitchen - Creating session with:", JSON.stringify(requestBody));
+        
         const sessionResponse = await fetch("/api/sessions/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurantSlug: restaurant.slug,
-            tableNumber,
-          }),
+          body: JSON.stringify(requestBody),
         });
+
+        console.log("[CLIENT] sendToKitchen - Session creation response status:", sessionResponse.status, "ok:", sessionResponse.ok);
 
         if (!sessionResponse.ok) {
           const errorData = await sessionResponse.json();
+          console.error("[CLIENT] sendToKitchen - Session creation failed:", errorData);
           throw new Error(errorData.error || "Failed to create session");
         }
 
         const sessionData = await sessionResponse.json();
+        console.log("[CLIENT] sendToKitchen - Session creation response:", {
+          success: sessionData.success,
+          hasSession: !!sessionData.session,
+          sessionTokenPreview: sessionData.session?.sessionToken?.substring(0, 8) + "...",
+          tableNumber: sessionData.session?.tableNumber
+        });
+
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
+          console.log("[CLIENT] sendToKitchen - Session created, token:", token.substring(0, 8) + "...");
           setSessionToken(token);
           if (tableNumber && token && typeof window !== "undefined") {
             try {
-              window.localStorage.setItem(`session_${restaurant.slug}_${tableNumber}`, token);
+              const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+              window.localStorage.setItem(storageKey, token);
+              console.log("[CLIENT] sendToKitchen - Token saved to localStorage:", storageKey);
             } catch (e) {
-              console.warn("Failed to save session to localStorage:", e);
+              console.warn("[CLIENT] sendToKitchen - Failed to save to localStorage:", e);
             }
           }
         } else {
+          console.error("[CLIENT] sendToKitchen - Invalid session response:", sessionData);
           throw new Error(sessionData.error || "Failed to create session");
         }
       } catch (error) {
-        console.error("Session creation error:", error);
+        console.error("[CLIENT] sendToKitchen - Session creation error:", error);
+        console.error("[CLIENT] sendToKitchen - Error details:", error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error);
         showToast(
           error instanceof Error ? error.message : "Failed to create session",
           "error"
@@ -179,34 +249,53 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
 
     if (!token) {
+      console.error("[CLIENT] sendToKitchen - No token available after creation attempt");
       showToast("Unable to create session. Please refresh the page.", "error");
       setIsSendingOrder(false);
       return;
     }
 
+    console.log("[CLIENT] sendToKitchen - Proceeding with order creation, token:", token.substring(0, 8) + "...");
     setIsSendingOrder(true);
     try {
+      const orderBody = {
+        sessionToken: token,
+        items: items.map((item) => ({
+          itemId: item.id,
+          quantity: item.quantity,
+        })),
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+      };
+      console.log("[CLIENT] sendToKitchen - Creating order with:", {
+        sessionToken: token.substring(0, 8) + "...",
+        itemsCount: orderBody.items.length,
+        customerName: orderBody.customerName,
+        customerPhone: orderBody.customerPhone
+      });
+
       const response = await fetch("/api/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionToken: token,
-          items: items.map((item) => ({
-            itemId: item.id,
-            quantity: item.quantity,
-          })),
-          customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
-        }),
+        body: JSON.stringify(orderBody),
       });
+
+      console.log("[CLIENT] sendToKitchen - Order creation response status:", response.status, "ok:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("[CLIENT] sendToKitchen - Order creation failed:", errorData);
         throw new Error(errorData.error || "Failed to send order");
       }
 
       const data = await response.json();
+      console.log("[CLIENT] sendToKitchen - Order creation response:", {
+        success: data.success,
+        orderId: data.order?.id
+      });
+
       if (data.success) {
+        console.log("[CLIENT] sendToKitchen - Order created successfully!");
         showToast(
           `Order sent to kitchen! Order #${data.order.id.slice(0, 8).toUpperCase()}`,
           "success"
@@ -217,16 +306,22 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         setCustomerPhone("");
         setShowCart(false);
       } else {
+        console.error("[CLIENT] sendToKitchen - Order creation returned success:false");
         throw new Error(data.error || "Failed to send order");
       }
     } catch (error) {
-      console.error("Order error:", error);
+      console.error("[CLIENT] sendToKitchen - Order creation error:", error);
+      console.error("[CLIENT] sendToKitchen - Error details:", error instanceof Error ? {
+        message: error.message,
+        stack: error.stack
+      } : error);
       showToast(
         error instanceof Error ? error.message : "Failed to send order",
         "error"
       );
     } finally {
       setIsSendingOrder(false);
+      console.log("[CLIENT] sendToKitchen completed");
     }
   };
 
