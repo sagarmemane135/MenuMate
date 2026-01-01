@@ -73,6 +73,30 @@ function BillPageContent() {
     }
   );
 
+  // Listen for counter payment confirmation
+  usePusherChannel(
+    sessionToken ? `session-${sessionToken}` : null,
+    "payment:counter:received",
+    (data: unknown) => {
+      const eventData = data as { sessionId: string; tableNumber: string; totalAmount: string };
+      showToast("Payment received! Thank you! ✅", "success");
+      // Update session status
+      if (session) {
+        setSession({ ...session, status: "paid", paymentStatus: "paid" });
+      }
+      // Clear session from localStorage
+      if (sessionToken) {
+        localStorage.removeItem(`session_${sessionToken}`);
+        const masterKey = `active_session_${sessionToken.split('_')[0]}`;
+        localStorage.removeItem(masterKey);
+      }
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    }
+  );
+
   const fetchSessionData = async () => {
     if (!sessionToken) return;
 
