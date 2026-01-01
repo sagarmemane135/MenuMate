@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { emitOrderStatusUpdated } from "@/lib/websocket-events";
 
 const updateOrderSchema = z.object({
-  status: z.enum(["pending", "cooking", "ready", "paid", "cancelled"]),
+  status: z.enum(["pending", "cooking", "ready", "served", "paid", "cancelled"]),
 });
 
 export async function PATCH(

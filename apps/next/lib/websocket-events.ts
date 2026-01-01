@@ -8,12 +8,18 @@ import Pusher from "pusher";
 interface OrderCreatedEvent {
   order: {
     id: string;
-    items: unknown;
+    items: Array<{
+      itemId: string;
+      name: string;
+      quantity: number;
+      price: number;
+    }>;
     totalAmount: string;
     status: string;
     tableNumber: string | null;
     customerName: string;
     createdAt: Date | string;
+    notes?: string | null;
   };
   session: {
     id: string;

@@ -35,21 +35,22 @@ export default async function KitchenPage() {
     );
   }
 
-  // Get all pending, cooking, and ready orders
-  const allOrders = await db
-    .select()
-    .from(orders)
-    .where(
-      and(
-        eq(orders.restaurantId, restaurant.id),
-        or(
-          eq(orders.status, "pending"),
-          eq(orders.status, "cooking"),
-          eq(orders.status, "ready")
-        )
-      )
-    )
-    .orderBy(desc(orders.createdAt));
+            // Get all pending, cooking, ready, and served orders
+            const allOrders = await db
+              .select()
+              .from(orders)
+              .where(
+                and(
+                  eq(orders.restaurantId, restaurant.id),
+                  or(
+                    eq(orders.status, "pending"),
+                    eq(orders.status, "cooking"),
+                    eq(orders.status, "ready"),
+                    eq(orders.status, "served")
+                  )
+                )
+              )
+              .orderBy(desc(orders.createdAt));
 
   return (
     <KitchenPageClient
@@ -62,7 +63,7 @@ export default async function KitchenPage() {
           quantity: number;
           price: number;
         }>,
-        status: order.status as "pending" | "cooking" | "ready" | "paid" | "cancelled",
+                  status: order.status as "pending" | "cooking" | "ready" | "served" | "paid" | "cancelled",
         tableNumber: order.tableNumber,
         totalAmount: order.totalAmount,
         customerName: order.customerName,

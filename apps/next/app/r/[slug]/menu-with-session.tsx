@@ -46,8 +46,21 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isSendingOrder, setIsSendingOrder] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  
+  // Load customer details from localStorage or session
+  const getInitialCustomerData = (): { name: string; phone: string } => {
+    if (typeof window === "undefined") return { name: "", phone: "" };
+    const savedName = localStorage.getItem(`customer_name_${restaurant.slug}`);
+    const savedPhone = localStorage.getItem(`customer_phone_${restaurant.slug}`);
+    return {
+      name: savedName || "",
+      phone: savedPhone || "",
+    };
+  };
+  
+  const initialCustomerData = getInitialCustomerData();
+  const [customerName, setCustomerName] = useState(initialCustomerData.name);
+  const [customerPhone, setCustomerPhone] = useState(initialCustomerData.phone);
   const [phoneError, setPhoneError] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showCart, setShowCart] = useState(false);

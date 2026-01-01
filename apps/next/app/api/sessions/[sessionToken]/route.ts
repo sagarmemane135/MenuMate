@@ -37,6 +37,8 @@ export async function GET(
         status: session.status,
         totalAmount: session.totalAmount,
         paymentStatus: session.paymentStatus,
+        customerName: session.customerName,
+        customerPhone: session.customerPhone,
         startedAt: session.startedAt,
       },
       orders: sessionOrders.map((order) => ({

@@ -27,9 +27,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createOrderSchema.parse(body);
 
-    // Get session
+    // Get session with customer details
     const [session] = await db
-      .select()
+      .select({
+        id: tableSessions.id,
+        restaurantId: tableSessions.restaurantId,
+        tableNumber: tableSessions.tableNumber,
+        status: tableSessions.status,
+        customerName: tableSessions.customerName,
+        customerPhone: tableSessions.customerPhone,
+      })
       .from(tableSessions)
       .where(eq(tableSessions.sessionToken, validatedData.sessionToken))
       .limit(1);
@@ -71,6 +78,17 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         price: Number(menuItem.price),
       });
+    }
+
+    // Update session with customer details if not already set
+    if (!session.customerName || !session.customerPhone) {
+      await db
+        .update(tableSessions)
+        .set({
+          customerName: validatedData.customerName,
+          customerPhone: validatedData.customerPhone,
+        })
+        .where(eq(tableSessions.id, session.id));
     }
 
     // Create order (NOT paid yet)
