@@ -78,8 +78,11 @@ export default async function KitchenPage() {
           )
         )
         .orderBy(desc(orders.createdAt));
+      
+      console.log(`[KDS-SERVER] Fetched ${allOrders.length} orders for restaurant ${restaurant.id}`);
+      console.log(`[KDS-SERVER] Orders:`, allOrders.map(o => ({ id: o.id, status: o.status, table: o.tableNumber })));
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("[KDS-SERVER] Error fetching orders:", error);
       allOrders = [];
     }
 
