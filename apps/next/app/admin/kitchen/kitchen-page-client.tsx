@@ -333,7 +333,7 @@ function OrderCard({
         </div>
         <div className="text-right">
           <div className="font-bold text-lg text-orange-600">₹{Number(order.totalAmount).toFixed(2)}</div>
-          <div className="text-xs text-slate-500">{timeAgo}m ago</div>
+          <div className="text-xs text-slate-500">{timeAgo}</div>
         </div>
       </div>
 
