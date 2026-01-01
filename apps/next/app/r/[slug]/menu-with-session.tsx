@@ -594,10 +594,15 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 {sessionToken && (
                   <a
                     href={`/bill?session=${sessionToken}`}
-                    className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
-                    title="View Bill"
+                    className="relative p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+                    title="Track Orders & View Bill"
                   >
                     <Receipt className="w-5 h-5 text-orange-600" />
+                    {recentOrders.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-[8px] text-white font-bold">{recentOrders.length}</span>
+                      </span>
+                    )}
                   </a>
                 )}
                 <button
