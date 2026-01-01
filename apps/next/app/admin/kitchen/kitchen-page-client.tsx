@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, useToast } from "@menumate/app";
 import { usePusherChannel } from "@/lib/pusher-client";
 import { Bell, Clock, CheckCircle, ChefHat } from "lucide-react";
+import { getTimeAgo } from "@/lib/date-utils";
 
 interface OrderItem {
   itemId: string;
@@ -255,8 +256,7 @@ function OrderCard({
   isUpdating?: boolean;
 }) {
   const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const createdAt = new Date(order.createdAt);
-  const timeAgo = Math.floor((Date.now() - createdAt.getTime()) / 1000 / 60);
+  const timeAgo = getTimeAgo(order.createdAt);
 
   const statusBorderColors: Record<Order["status"], string> = {
     pending: "border-yellow-400",

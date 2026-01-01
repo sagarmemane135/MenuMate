@@ -4,6 +4,7 @@ import { Card, Button } from "@menumate/app";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { CheckCircle, XCircle, User, Mail, Store } from "lucide-react";
+import { formatIndianDateTime } from "@/lib/date-utils";
 
 async function approveUser(userId: string) {
   "use server";
@@ -133,7 +134,7 @@ export default async function SuperAdminPage() {
                     </div>
                     <p className="text-xs text-slate-500" suppressHydrationWarning>
                       <span className="font-semibold">Requested:</span>{" "}
-                      {new Date(pendingUser.createdAt).toLocaleString()}
+                      {formatIndianDateTime(pendingUser.createdAt)}
                     </p>
                   </div>
                 </div>

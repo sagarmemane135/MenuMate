@@ -25,7 +25,13 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         "Too many login attempts. Please try again later.",
         429,
-        `Rate limit exceeded. Try again after ${new Date(rateLimit.resetTime).toLocaleTimeString()}`
+        `Rate limit exceeded. Try again after ${new Intl.DateTimeFormat("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          hour12: true,
+        }).format(new Date(rateLimit.resetTime))}`
       );
     }
 

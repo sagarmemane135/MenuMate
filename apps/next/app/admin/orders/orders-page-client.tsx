@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { usePusherChannel } from "@/lib/pusher-client";
+import { formatIndianDateTime } from "@/lib/date-utils";
 
 interface Order {
   id: string;
@@ -136,7 +137,7 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
                     )}
                   </p>
                   <p className="text-sm text-gray-600" suppressHydrationWarning>
-                    Created: {new Date(order.createdAt).toLocaleString()}
+                    Created: {formatIndianDateTime(order.createdAt)}
                   </p>
                   {!order.isPaid && order.sessionId && (
                     <p className="text-xs text-orange-600 font-semibold mt-1">

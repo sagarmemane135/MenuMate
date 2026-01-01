@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { Users, Calendar, CreditCard, Store, CheckCircle2, Clock, Eye, X, Receipt } from "lucide-react";
+import { formatIndianDateTime } from "@/lib/date-utils";
 
 interface Session {
   id: string;
@@ -224,14 +225,14 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                         <p className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4" />
                           <span suppressHydrationWarning>
-                            Started: {new Date(session.startedAt as string).toLocaleString()}
+                            Started: {formatIndianDateTime(session.startedAt)}
                           </span>
                         </p>
                         {session.closedAt && (
                           <p className="flex items-center space-x-2">
                             <Clock className="w-4 h-4" />
                             <span suppressHydrationWarning>
-                              Closed: {new Date(session.closedAt as string).toLocaleString()}
+                              Closed: {formatIndianDateTime(session.closedAt)}
                             </span>
                           </p>
                         )}
@@ -291,7 +292,7 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                   Table {sessionDetails.session.tableNumber} - Session Details
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Started: {new Date(sessionDetails.session.startedAt as string).toLocaleString()}
+                  Started: {formatIndianDateTime(sessionDetails.session.startedAt)}
                 </p>
               </div>
               <button
@@ -363,7 +364,7 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                             <div>
                               <h4 className="font-semibold text-gray-900">Order #{index + 1}</h4>
                               <p className="text-xs text-gray-500">
-                                {new Date(order.createdAt).toLocaleString()}
+                                {formatIndianDateTime(order.createdAt)}
                               </p>
                             </div>
                             <div className="text-right">

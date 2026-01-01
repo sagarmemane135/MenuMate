@@ -6,6 +6,7 @@ import { Button, useToast } from "@menumate/app";
 import { Receipt, CreditCard, Store, Users, ArrowLeft, Loader2 } from "lucide-react";
 import type { RazorpayPaymentResponse, RazorpayCheckoutOptions } from "@/lib/types/razorpay";
 import { usePusherChannel } from "@/lib/pusher-client";
+import { formatIndianTime } from "@/lib/date-utils";
 
 interface OrderItem {
   itemId: string;
@@ -323,7 +324,7 @@ function BillPageContent() {
                           Order #{index + 1}
                         </h3>
                         <p className="text-xs text-gray-500">
-                          {new Date(order.createdAt).toLocaleTimeString()}
+                          {formatIndianTime(order.createdAt)}
                         </p>
                       </div>
                       <span
