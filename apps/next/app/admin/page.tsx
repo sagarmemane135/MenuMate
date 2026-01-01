@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
     // Fetch active sessions for this restaurant
     if (restaurant) {
       const { tableSessions, and } = await import("@menumate/db");
-      activeSessions = await db
+      const activeSessionsData = await db
         .select()
         .from(tableSessions)
         .where(
@@ -40,8 +40,15 @@ export default async function AdminDashboard() {
           )
         );
       
+      // Serialize dates for client component
+      activeSessions = activeSessionsData.map((session) => ({
+        ...session,
+        startedAt: session.startedAt instanceof Date ? session.startedAt.toISOString() : session.startedAt,
+        closedAt: session.closedAt instanceof Date ? session.closedAt.toISOString() : session.closedAt,
+      }));
+      
       // Fetch pending counter payments
-      pendingCounterPayments = await db
+      const pendingPaymentsData = await db
         .select()
         .from(tableSessions)
         .where(
@@ -51,6 +58,13 @@ export default async function AdminDashboard() {
             eq(tableSessions.paymentStatus, "pending")
           )
         );
+      
+      // Serialize dates for client component
+      pendingCounterPayments = pendingPaymentsData.map((payment) => ({
+        ...payment,
+        startedAt: payment.startedAt instanceof Date ? payment.startedAt.toISOString() : payment.startedAt,
+        closedAt: payment.closedAt instanceof Date ? payment.closedAt.toISOString() : payment.closedAt,
+      }));
     }
   }
 

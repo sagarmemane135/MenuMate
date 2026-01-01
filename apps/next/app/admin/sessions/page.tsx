@@ -63,11 +63,19 @@ export default async function SessionsPage() {
 
       return {
         ...session,
+        startedAt: session.startedAt instanceof Date ? session.startedAt.toISOString() : session.startedAt,
+        closedAt: session.closedAt instanceof Date ? session.closedAt.toISOString() : session.closedAt,
         ordersCount: sessionOrders.length,
       };
     })
   );
 
-  return <SessionsPageClient initialSessions={sessionsWithOrders} restaurantId={restaurant.id} pendingCounterPayments={pendingCounterPayments} />;
+  // Serialize pendingCounterPayments dates
+  const serializedPendingPayments = pendingCounterPayments.map((payment) => ({
+    ...payment,
+    startedAt: payment.startedAt instanceof Date ? payment.startedAt.toISOString() : payment.startedAt,
+  }));
+
+  return <SessionsPageClient initialSessions={sessionsWithOrders} restaurantId={restaurant.id} pendingCounterPayments={serializedPendingPayments} />;
 }
 

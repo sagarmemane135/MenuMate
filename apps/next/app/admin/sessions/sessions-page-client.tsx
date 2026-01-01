@@ -12,8 +12,8 @@ interface Session {
   totalAmount: string;
   paymentMethod: string | null;
   paymentStatus: string | null;
-  startedAt: Date;
-  closedAt: Date | null;
+  startedAt: string | Date;
+  closedAt: string | Date | null;
   ordersCount: number;
   customerName?: string | null;
   customerPhone?: string | null;
@@ -27,7 +27,7 @@ interface SessionsPageClientProps {
     sessionToken: string;
     tableNumber: string;
     totalAmount: string;
-    startedAt: Date;
+    startedAt: string | Date;
   }>;
 }
 
@@ -224,14 +224,14 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                         <p className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4" />
                           <span suppressHydrationWarning>
-                            Started: {new Date(session.startedAt).toLocaleString()}
+                            Started: {new Date(session.startedAt as string).toLocaleString()}
                           </span>
                         </p>
                         {session.closedAt && (
                           <p className="flex items-center space-x-2">
                             <Clock className="w-4 h-4" />
                             <span suppressHydrationWarning>
-                              Closed: {new Date(session.closedAt).toLocaleString()}
+                              Closed: {new Date(session.closedAt as string).toLocaleString()}
                             </span>
                           </p>
                         )}
@@ -291,7 +291,7 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                   Table {sessionDetails.session.tableNumber} - Session Details
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Started: {new Date(sessionDetails.session.startedAt).toLocaleString()}
+                  Started: {new Date(sessionDetails.session.startedAt as string).toLocaleString()}
                 </p>
               </div>
               <button
