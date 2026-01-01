@@ -72,6 +72,21 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
+  // Verify session token is still valid
+  const verifySession = async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/sessions/${token}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.success && data.session?.status === "active";
+      }
+      return false;
+    } catch (error) {
+      console.error("[CLIENT] Session verification error:", error);
+      return false;
+    }
+  };
+
   // Create or get session on mount if table number provided
   useEffect(() => {
     console.log("[CLIENT] useEffect - Session initialization");
@@ -85,15 +100,28 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       console.log("[CLIENT] useEffect - Saved token found:", savedToken ? savedToken.substring(0, 8) + "..." : "null");
       
       if (savedToken) {
-        console.log("[CLIENT] useEffect - Using saved token");
-        setSessionToken(savedToken);
+        console.log("[CLIENT] useEffect - Verifying saved token with server");
+        // Verify the token is still valid before using it
+        verifySession(savedToken).then((isValid) => {
+          if (isValid) {
+            console.log("[CLIENT] useEffect - Token is valid, using saved token");
+            setSessionToken(savedToken);
+          } else {
+            console.log("[CLIENT] useEffect - Token is invalid, clearing and creating new session");
+            localStorage.removeItem(storageKey);
+            // The API will check for existing active sessions and return it if found
+            createSession();
+          }
+        });
       } else {
-        console.log("[CLIENT] useEffect - No saved token, creating new session");
+        console.log("[CLIENT] useEffect - No saved token, checking for existing session or creating new");
+        // The API will check for existing active sessions and return it if found
         createSession();
       }
     } else {
       console.log("[CLIENT] useEffect - Skipping session creation - tableNumber:", tableNumber, "window:", typeof window);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableNumber, restaurant.slug]);
 
   // Listen for order status updates via WebSocket
@@ -149,8 +177,27 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       return;
     }
     
+    // Check localStorage first to avoid unnecessary API calls
+    if (typeof window !== "undefined") {
+      const storageKey = `session_${restaurant.slug}_${table}`;
+      const savedToken = localStorage.getItem(storageKey);
+      if (savedToken) {
+        console.log("[CLIENT] Found saved token, verifying before creating new session");
+        const isValid = await verifySession(savedToken);
+        if (isValid) {
+          console.log("[CLIENT] Saved token is valid, using it");
+          setSessionToken(savedToken);
+          return;
+        } else {
+          console.log("[CLIENT] Saved token is invalid, clearing and creating new");
+          localStorage.removeItem(storageKey);
+        }
+      }
+    }
+    
     setIsCreatingSession(true);
     console.log("[CLIENT] Starting session creation - restaurantSlug:", restaurant.slug, "tableNumber:", table);
+    console.log("[CLIENT] Note: API will check for existing active session and return it if found");
     
     try {
       const requestBody = {
@@ -178,16 +225,18 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         success: data.success,
         hasSession: !!data.session,
         sessionTokenPreview: data.session?.sessionToken?.substring(0, 8) + "...",
-        tableNumber: data.session?.tableNumber
+        tableNumber: data.session?.tableNumber,
+        status: data.session?.status
       });
 
       if (data.success && data.session?.sessionToken) {
-        console.log("[CLIENT] Session created successfully, setting token");
-        setSessionToken(data.session.sessionToken);
+        const token = data.session.sessionToken;
+        console.log("[CLIENT] Session obtained successfully (may be existing or new), setting token");
+        setSessionToken(token);
         if (typeof window !== "undefined") {
           try {
             const storageKey = `session_${restaurant.slug}_${table}`;
-            window.localStorage.setItem(storageKey, data.session.sessionToken);
+            window.localStorage.setItem(storageKey, token);
             console.log("[CLIENT] Session token saved to localStorage with key:", storageKey);
             // Update URL if table number was input manually
             if (!tableNumber && table) {
