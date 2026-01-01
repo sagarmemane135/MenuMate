@@ -43,15 +43,37 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const { addItem, items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
   const { showToast } = useToast();
   
-  // Initialize session token from localStorage immediately (synchronously)
-  const getInitialSessionToken = (): string | null => {
-    if (typeof window === "undefined" || !tableNumber) return null;
-    const storageKey = `session_${restaurant.slug}_${tableNumber}`;
-    const savedToken = localStorage.getItem(storageKey);
-    return savedToken;
+  // Initialize session token and table number from localStorage immediately (synchronously)
+  const getInitialSessionData = (): { token: string | null; table: string | null } => {
+    if (typeof window === "undefined") return { token: null, table: null };
+    
+    // First, try to get table number from URL
+    if (tableNumber) {
+      const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+      const savedToken = localStorage.getItem(storageKey);
+      return { token: savedToken, table: tableNumber };
+    }
+    
+    // If no table number in URL, try to find any saved session for this restaurant
+    // Check localStorage for any session keys matching this restaurant
+    const prefix = `session_${restaurant.slug}_`;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const savedTable = key.replace(prefix, "");
+        const savedToken = localStorage.getItem(key);
+        if (savedToken && savedTable) {
+          console.log("[CLIENT] Found saved session for table:", savedTable);
+          return { token: savedToken, table: savedTable };
+        }
+      }
+    }
+    
+    return { token: null, table: null };
   };
   
-  const [sessionToken, setSessionToken] = useState<string | null>(getInitialSessionToken);
+  const initialData = getInitialSessionData();
+  const [sessionToken, setSessionToken] = useState<string | null>(initialData.token);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isSendingOrder, setIsSendingOrder] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -59,7 +81,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const [phoneError, setPhoneError] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const [inputTableNumber, setInputTableNumber] = useState(tableNumber || "");
+  const [inputTableNumber, setInputTableNumber] = useState(tableNumber || initialData.table || "");
   const [recentOrders, setRecentOrders] = useState<Array<{
     id: string;
     status: string;
@@ -96,14 +118,25 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
-  // Verify and restore session on mount if table number provided
+  // Verify and restore session on mount
   useEffect(() => {
     console.log("[CLIENT] useEffect - Session initialization");
-    console.log("[CLIENT] useEffect - tableNumber:", tableNumber, "restaurant.slug:", restaurant.slug);
+    console.log("[CLIENT] useEffect - tableNumber from URL:", tableNumber);
+    console.log("[CLIENT] useEffect - inputTableNumber:", inputTableNumber);
     console.log("[CLIENT] useEffect - Initial sessionToken from state:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null");
     
-    if (tableNumber && typeof window !== "undefined") {
-      const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+    // Determine which table number to use
+    const effectiveTable = tableNumber || inputTableNumber;
+    
+    // If we have a table number (from URL or localStorage), restore session
+    if (effectiveTable && typeof window !== "undefined") {
+      // If table number was restored from localStorage but not in URL, update URL
+      if (!tableNumber && inputTableNumber) {
+        console.log("[CLIENT] useEffect - Restoring table number to URL:", inputTableNumber);
+        router.replace(`/r/${restaurant.slug}?table=${inputTableNumber}`, { scroll: false });
+      }
+      
+      const storageKey = `session_${restaurant.slug}_${effectiveTable}`;
       const savedToken = localStorage.getItem(storageKey);
       
       // If we have a token (either from initial state or localStorage), verify it
@@ -140,7 +173,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         createSession();
       }
     } else {
-      console.log("[CLIENT] useEffect - Skipping session creation - tableNumber:", tableNumber, "window:", typeof window);
+      console.log("[CLIENT] useEffect - No table number available yet, waiting for user input");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableNumber, restaurant.slug]);
@@ -252,16 +285,21 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
       if (data.success && data.session?.sessionToken) {
         const token = data.session.sessionToken;
+        const sessionTable = data.session.tableNumber || table;
         console.log("[CLIENT] Session obtained successfully (may be existing or new), setting token");
         setSessionToken(token);
         if (typeof window !== "undefined") {
           try {
-            const storageKey = `session_${restaurant.slug}_${table}`;
+            const storageKey = `session_${restaurant.slug}_${sessionTable}`;
             window.localStorage.setItem(storageKey, token);
             console.log("[CLIENT] Session token saved to localStorage with key:", storageKey);
-            // Update URL if table number was input manually
-            if (!tableNumber && table) {
-              router.replace(`/r/${restaurant.slug}?table=${table}`);
+            // Update inputTableNumber if it was different
+            if (sessionTable && sessionTable !== inputTableNumber) {
+              setInputTableNumber(sessionTable);
+            }
+            // Update URL if table number was input manually or different
+            if ((!tableNumber || tableNumber !== sessionTable) && sessionTable) {
+              router.replace(`/r/${restaurant.slug}?table=${sessionTable}`, { scroll: false });
             }
           } catch (e) {
             console.warn("[CLIENT] Failed to save session to localStorage:", e);
@@ -351,13 +389,21 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
+          const sessionTable = sessionData.session.tableNumber || table;
           console.log("[CLIENT] sendToKitchen - Session created, token:", token ? token.substring(0, 8) + "..." : "null");
           setSessionToken(token);
-          if (table && token && typeof window !== "undefined") {
+          if (sessionTable && token && typeof window !== "undefined") {
             try {
-              const storageKey = `session_${restaurant.slug}_${table}`;
+              const storageKey = `session_${restaurant.slug}_${sessionTable}`;
               window.localStorage.setItem(storageKey, token);
               console.log("[CLIENT] sendToKitchen - Token saved to localStorage:", storageKey);
+              // Update inputTableNumber and URL if needed
+              if (sessionTable !== inputTableNumber) {
+                setInputTableNumber(sessionTable);
+              }
+              if ((!tableNumber || tableNumber !== sessionTable) && sessionTable) {
+                router.replace(`/r/${restaurant.slug}?table=${sessionTable}`, { scroll: false });
+              }
             } catch (e) {
               console.warn("[CLIENT] sendToKitchen - Failed to save to localStorage:", e);
             }
