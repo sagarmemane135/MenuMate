@@ -40,13 +40,28 @@ export function subscribeToChannel(
 ) {
   const pusher = getPusherClient();
   if (!pusher) {
+    console.warn("[PUSHER] Client not available, cannot subscribe to:", channelName);
     return () => {};
   }
 
+  console.log(`[PUSHER] 🔌 Subscribing to channel: ${channelName}, event: ${eventName}`);
   const channel = pusher.subscribe(channelName);
-  channel.bind(eventName, callback);
+
+  channel.bind("pusher:subscription_succeeded", () => {
+    console.log(`[PUSHER] ✅ Successfully subscribed to channel: ${channelName}`);
+  });
+
+  channel.bind("pusher:subscription_error", (error: unknown) => {
+    console.error(`[PUSHER] ❌ Subscription error for channel ${channelName}:`, error);
+  });
+
+  channel.bind(eventName, (data: unknown) => {
+    console.log(`[PUSHER] 📨 Event received on ${channelName}:`, eventName, data);
+    callback(data);
+  });
 
   return () => {
+    console.log(`[PUSHER] 🔌 Unsubscribing from channel: ${channelName}`);
     channel.unbind(eventName, callback);
     pusher.unsubscribe(channelName);
   };
