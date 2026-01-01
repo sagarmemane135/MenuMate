@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { db, tableSessions, orders, eq, desc } from "@menumate/db";
+import { db, tableSessions, orders, eq, desc, and } from "@menumate/db";
 import { SessionsPageClient } from "./sessions-page-client";
 
 export default async function SessionsPage() {
@@ -41,6 +41,18 @@ export default async function SessionsPage() {
     .where(eq(tableSessions.restaurantId, restaurant.id))
     .orderBy(desc(tableSessions.startedAt));
 
+  // Also fetch pending counter payments
+  const pendingCounterPayments = await db
+    .select()
+    .from(tableSessions)
+    .where(
+      and(
+        eq(tableSessions.restaurantId, restaurant.id),
+        eq(tableSessions.paymentMethod, "counter"),
+        eq(tableSessions.paymentStatus, "pending")
+      )
+    );
+
   // Fetch orders count for each session
   const sessionsWithOrders = await Promise.all(
     allSessions.map(async (session) => {
@@ -56,6 +68,6 @@ export default async function SessionsPage() {
     })
   );
 
-  return <SessionsPageClient initialSessions={sessionsWithOrders} />;
+  return <SessionsPageClient initialSessions={sessionsWithOrders} restaurantId={restaurant.id} pendingCounterPayments={pendingCounterPayments} />;
 }
 

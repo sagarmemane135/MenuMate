@@ -19,6 +19,14 @@ interface Session {
 
 interface SessionsPageClientProps {
   initialSessions: Session[];
+  restaurantId: string;
+  pendingCounterPayments?: Array<{
+    id: string;
+    sessionToken: string;
+    tableNumber: string;
+    totalAmount: string;
+    startedAt: Date;
+  }>;
 }
 
 export function SessionsPageClient({ initialSessions }: SessionsPageClientProps) {

@@ -19,9 +19,16 @@ interface DashboardClientProps {
     sessionToken: string;
     startedAt: Date;
   }>;
+  pendingCounterPayments?: Array<{
+    id: string;
+    sessionToken: string;
+    tableNumber: string;
+    totalAmount: string;
+    startedAt: Date;
+  }>;
 }
 
-export function DashboardClient({ restaurant, userEmail, activeSessions }: DashboardClientProps) {
+export function DashboardClient({ restaurant, userEmail, activeSessions, pendingCounterPayments = [] }: DashboardClientProps) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [restaurantData, setRestaurantData] = useState(restaurant);
   const [qrCode, setQrCode] = useState<string | null>(null);

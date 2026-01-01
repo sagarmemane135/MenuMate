@@ -118,3 +118,102 @@ export async function emitOrderStatusUpdated(
   }
 }
 
+/**
+ * Emit counter payment requested event to restaurant room (for admin)
+ */
+export async function emitCounterPaymentRequested(
+  restaurantId: string,
+  eventData: {
+    sessionId: string;
+    sessionToken: string;
+    tableNumber: string;
+    totalAmount: string;
+    requestedAt: string;
+  }
+) {
+  try {
+    // Use Pusher for Vercel deployment
+    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+      const pusher = new Pusher({
+        appId: process.env.PUSHER_APP_ID,
+        key: process.env.PUSHER_KEY,
+        secret: process.env.PUSHER_SECRET,
+        cluster: process.env.PUSHER_CLUSTER || "ap2",
+        useTLS: true,
+      });
+
+      // Emit to restaurant room (for admin)
+      console.log("[WEBSOCKET] Emitting counter payment request to restaurant:", `restaurant-${restaurantId}`);
+      await pusher.trigger(
+        `restaurant-${restaurantId}`,
+        "payment:counter:requested",
+        eventData
+      );
+      console.log("[WEBSOCKET] Counter payment request event emitted successfully");
+    } else {
+      // Fallback: Log event
+      console.log("WebSocket event (payment:counter:requested):", {
+        channel: `restaurant-${restaurantId}`,
+        event: "payment:counter:requested",
+        data: eventData,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to emit payment:counter:requested event:", error);
+    // Don't fail the request if WebSocket emission fails
+  }
+}
+
+/**
+ * Emit counter payment received event (when admin marks as paid)
+ */
+export async function emitCounterPaymentReceived(
+  restaurantId: string,
+  sessionToken: string,
+  eventData: {
+    sessionId: string;
+    tableNumber: string;
+    totalAmount: string;
+    paidAt: string;
+  }
+) {
+  try {
+    // Use Pusher for Vercel deployment
+    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+      const pusher = new Pusher({
+        appId: process.env.PUSHER_APP_ID,
+        key: process.env.PUSHER_KEY,
+        secret: process.env.PUSHER_SECRET,
+        cluster: process.env.PUSHER_CLUSTER || "ap2",
+        useTLS: true,
+      });
+
+      // Emit to restaurant room (for admin confirmation)
+      await pusher.trigger(
+        `restaurant-${restaurantId}`,
+        "payment:counter:received",
+        eventData
+      );
+
+      // Emit to session room (for customer notification)
+      await pusher.trigger(
+        `session-${sessionToken}`,
+        "payment:counter:received",
+        eventData
+      );
+
+      console.log("[WEBSOCKET] Counter payment received event emitted successfully");
+    } else {
+      // Fallback: Log event
+      console.log("WebSocket event (payment:counter:received):", {
+        channels: [`restaurant-${restaurantId}`, `session-${sessionToken}`],
+        event: "payment:counter:received",
+        data: eventData,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to emit payment:counter:received event:", error);
+    // Don't fail the request if WebSocket emission fails
+  }
+}
+

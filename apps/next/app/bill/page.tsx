@@ -43,6 +43,8 @@ function BillPageContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentSelection, setShowPaymentSelection] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"online" | "counter" | null>(null);
 
   useEffect(() => {
     if (sessionToken) {
@@ -146,13 +148,36 @@ function BillPageContent() {
   };
 
   const handlePayAtCounter = async () => {
-    if (!sessionToken) return;
+    if (!sessionToken || !session) return;
 
-    // Use toast for confirmation instead of confirm dialog
-    // For now, proceed directly (can add confirmation dialog component later)
-    showToast("Processing payment at counter...", "info");
+    setIsProcessingPayment(true);
+    try {
+      // Request counter payment - this will notify admin
+      const response = await fetch(`/api/sessions/${sessionToken}/request-counter-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
-    await closeSession("counter");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to request counter payment");
+      }
+
+      if (data.success) {
+        showToast("Payment request sent! Please proceed to the counter.", "success");
+        // Don't close session yet - wait for admin to mark as paid
+        // Session will remain active until admin confirms payment
+      }
+    } catch (error) {
+      console.error("Counter payment request error:", error);
+      showToast(
+        error instanceof Error ? error.message : "Failed to request counter payment",
+        "error"
+      );
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const closeSession = async (paymentMethod: string, paymentId?: string) => {
@@ -332,11 +357,31 @@ function BillPageContent() {
               </div>
             </div>
 
-            {/* Payment Buttons */}
-            {session.status === "active" && orders.length > 0 && (
+            {/* Payment Selection */}
+            {session.status === "active" && orders.length > 0 && !showPaymentSelection && (
               <div className="space-y-3">
                 <Button
-                  onClick={handlePayOnline}
+                  onClick={() => setShowPaymentSelection(true)}
+                  className="w-full h-14 text-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                >
+                  <Receipt className="w-5 h-5 mr-2" />
+                  Choose Payment Method
+                </Button>
+                <p className="text-xs text-center text-gray-500">
+                  Select your preferred payment method
+                </p>
+              </div>
+            )}
+
+            {/* Payment Method Selection */}
+            {session.status === "active" && orders.length > 0 && showPaymentSelection && !selectedPaymentMethod && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h3>
+                <Button
+                  onClick={() => {
+                    setSelectedPaymentMethod("online");
+                    handlePayOnline();
+                  }}
                   disabled={isProcessingPayment}
                   className="w-full h-14 text-lg"
                 >
@@ -345,17 +390,47 @@ function BillPageContent() {
                 </Button>
 
                 <Button
-                  onClick={handlePayAtCounter}
+                  onClick={() => {
+                    setSelectedPaymentMethod("counter");
+                    handlePayAtCounter();
+                  }}
+                  disabled={isProcessingPayment}
                   variant="outline"
                   className="w-full h-14 text-lg"
                 >
                   <Store className="w-5 h-5 mr-2" />
-                  Pay at Counter
+                  {isProcessingPayment ? "Processing..." : "Pay at Counter"}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setShowPaymentSelection(false);
+                    setSelectedPaymentMethod(null);
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Cancel
                 </Button>
 
                 <p className="text-xs text-center text-gray-500">
                   Secure payment powered by Razorpay
                 </p>
+              </div>
+            )}
+
+            {/* Payment Status Messages */}
+            {session.status === "active" && session.paymentStatus === "pending" && selectedPaymentMethod === "counter" && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <Store className="w-6 h-6 text-yellow-600" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-yellow-900">Payment Request Sent</p>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Please proceed to the counter to complete your payment. Our staff has been notified.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
