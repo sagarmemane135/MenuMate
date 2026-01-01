@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         restaurantId: tableSessions.restaurantId,
         tableNumber: tableSessions.tableNumber,
         status: tableSessions.status,
+        sessionToken: tableSessions.sessionToken,
         customerName: tableSessions.customerName,
         customerPhone: tableSessions.customerPhone,
       })
