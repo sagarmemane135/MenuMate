@@ -34,13 +34,17 @@ export function DashboardClient({ restaurant, userEmail, activeSessions }: Dashb
   };
 
   const [menuUrl, setMenuUrl] = useState('');
+  const [tableNumber, setTableNumber] = useState('1');
 
   // Set menu URL on client side only to avoid hydration mismatch
   useEffect(() => {
     if (restaurantData) {
-      setMenuUrl(`${window.location.origin}/r/${restaurantData.slug}`);
+      const url = tableNumber 
+        ? `${window.location.origin}/r/${restaurantData.slug}?table=${tableNumber}`
+        : `${window.location.origin}/r/${restaurantData.slug}`;
+      setMenuUrl(url);
     }
-  }, [restaurantData]);
+  }, [restaurantData, tableNumber]);
 
   // Generate QR code when menuUrl is ready
   useEffect(() => {
@@ -189,9 +193,27 @@ export function DashboardClient({ restaurant, userEmail, activeSessions }: Dashb
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
                   Share Your Menu
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 mb-2">
                   Print this QR code and place it on your tables. Customers can scan it to view your menu instantly.
                 </p>
+                <div className="mb-4">
+                  <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                    Table Number (for QR code URL)
+                  </label>
+                  <input
+                    type="text"
+                    value={tableNumber}
+                    onChange={(e) => {
+                      setTableNumber(e.target.value);
+                      setQrCode(null); // Reset QR code to regenerate
+                    }}
+                    placeholder="e.g., 1, 2, 3..."
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The QR code will include this table number in the URL
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3">

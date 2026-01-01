@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt } from "lucide-react";
 import { useCart, useToast } from "@menumate/app";
 import { CartDrawer } from "@menumate/app";
@@ -37,6 +37,7 @@ interface MenuWithSessionProps {
 
 export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithSessionProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tableNumber = searchParams.get("table");
   
   const { addItem, items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
@@ -46,8 +47,25 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   const [isSendingOrder, setIsSendingOrder] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [inputTableNumber, setInputTableNumber] = useState(tableNumber || "");
+
+  // Validate phone number (10 digits for Indian numbers)
+  const validatePhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, "");
+    return cleaned.length === 10;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setCustomerPhone(value);
+    if (value && !validatePhone(value)) {
+      setPhoneError("Please enter a valid 10-digit phone number");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   // Create or get session on mount if table number provided
   useEffect(() => {
@@ -91,21 +109,22 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   );
 
-  const createSession = async () => {
-    console.log("[CLIENT] createSession called - tableNumber:", tableNumber, "isCreatingSession:", isCreatingSession);
+  const createSession = async (tableNum?: string) => {
+    const table = tableNum || tableNumber || inputTableNumber;
+    console.log("[CLIENT] createSession called - tableNumber:", table, "isCreatingSession:", isCreatingSession);
     
-    if (!tableNumber || isCreatingSession) {
-      console.log("[CLIENT] createSession aborted - tableNumber:", tableNumber, "isCreatingSession:", isCreatingSession);
+    if (!table || isCreatingSession) {
+      console.log("[CLIENT] createSession aborted - tableNumber:", table, "isCreatingSession:", isCreatingSession);
       return;
     }
     
     setIsCreatingSession(true);
-    console.log("[CLIENT] Starting session creation - restaurantSlug:", restaurant.slug, "tableNumber:", tableNumber);
+    console.log("[CLIENT] Starting session creation - restaurantSlug:", restaurant.slug, "tableNumber:", table);
     
     try {
       const requestBody = {
         restaurantSlug: restaurant.slug,
-        tableNumber,
+        tableNumber: table,
       };
       console.log("[CLIENT] Sending session creation request:", JSON.stringify(requestBody));
       
@@ -136,9 +155,13 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         setSessionToken(data.session.sessionToken);
         if (typeof window !== "undefined") {
           try {
-            const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+            const storageKey = `session_${restaurant.slug}_${table}`;
             window.localStorage.setItem(storageKey, data.session.sessionToken);
             console.log("[CLIENT] Session token saved to localStorage with key:", storageKey);
+            // Update URL if table number was input manually
+            if (!tableNumber && table) {
+              router.replace(`/r/${restaurant.slug}?table=${table}`);
+            }
           } catch (e) {
             console.warn("[CLIENT] Failed to save session to localStorage:", e);
           }
@@ -165,7 +188,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
   const sendToKitchen = async () => {
     console.log("[CLIENT] sendToKitchen called");
-    console.log("[CLIENT] Current state - items:", items.length, "customerName:", customerName, "customerPhone:", customerPhone, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null", "tableNumber:", tableNumber);
+    console.log("[CLIENT] Current state - items:", items.length, "customerName:", customerName, "customerPhone:", customerPhone, "sessionToken:", sessionToken ? sessionToken.substring(0, 8) + "..." : "null", "tableNumber:", tableNumber || inputTableNumber);
     
     if (items.length === 0) {
       console.log("[CLIENT] sendToKitchen aborted - cart is empty");
@@ -176,21 +199,30 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     if (!customerName.trim() || !customerPhone.trim()) {
       console.log("[CLIENT] sendToKitchen - showing customer form");
       setShowCustomerForm(true);
+      setShowCart(true);
       return;
     }
 
+    if (!validatePhone(customerPhone)) {
+      showToast("Please enter a valid 10-digit phone number", "error");
+      return;
+    }
+
+    // Get table number (from URL or input)
+    const table = tableNumber || inputTableNumber;
+    
     // If no session token, create one first
     let token: string | null = sessionToken;
     console.log("[CLIENT] sendToKitchen - current token:", token ? token.substring(0, 8) + "..." : "null");
     
-    if (!token && tableNumber) {
+    if (!token && table) {
       console.log("[CLIENT] sendToKitchen - No token, creating session first");
       setIsSendingOrder(true);
       showToast("Creating session...", "info");
       try {
         const requestBody = {
           restaurantSlug: restaurant.slug,
-          tableNumber,
+          tableNumber: table,
         };
         console.log("[CLIENT] sendToKitchen - Creating session with:", JSON.stringify(requestBody));
         
@@ -220,9 +252,9 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           token = sessionData.session.sessionToken;
           console.log("[CLIENT] sendToKitchen - Session created, token:", token ? token.substring(0, 8) + "..." : "null");
           setSessionToken(token);
-          if (tableNumber && token && typeof window !== "undefined") {
+          if (table && token && typeof window !== "undefined") {
             try {
-              const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+              const storageKey = `session_${restaurant.slug}_${table}`;
               window.localStorage.setItem(storageKey, token);
               console.log("[CLIENT] sendToKitchen - Token saved to localStorage:", storageKey);
             } catch (e) {
@@ -250,7 +282,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
     if (!token) {
       console.error("[CLIENT] sendToKitchen - No token available after creation attempt");
-      showToast("Unable to create session. Please refresh the page.", "error");
+      showToast("Please enter a table number to continue", "error");
       setIsSendingOrder(false);
       return;
     }
@@ -265,7 +297,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           quantity: item.quantity,
         })),
         customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
+        customerPhone: customerPhone.replace(/\D/g, ""), // Clean phone number
       };
       console.log("[CLIENT] sendToKitchen - Creating order with:", {
         sessionToken: token.substring(0, 8) + "...",
@@ -325,6 +357,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
+  const currentTable = tableNumber || inputTableNumber;
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 pb-24">
@@ -340,10 +374,25 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                   <h1 className="text-base font-bold text-gray-900 truncate">
                     {restaurant.name}
                   </h1>
-                  {tableNumber && (
+                  {currentTable ? (
                     <p className="text-[10px] text-orange-600 font-medium">
-                      Table {tableNumber}
+                      Table {currentTable} • {sessionToken ? "Session Active" : "Connecting..."}
                     </p>
+                  ) : (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <input
+                        type="text"
+                        placeholder="Table #"
+                        value={inputTableNumber}
+                        onChange={(e) => setInputTableNumber(e.target.value)}
+                        onBlur={() => {
+                          if (inputTableNumber && !sessionToken) {
+                            createSession();
+                          }
+                        }}
+                        className="text-[10px] w-16 px-1.5 py-0.5 border border-orange-200 rounded focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                      />
+                    </div>
                   )}
                 </div>
               </div>
@@ -577,47 +626,62 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
               {items.length > 0 && (
                 <div className="p-4 border-t border-gray-200 space-y-3">
-                  <div className="flex items-center justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-orange-600">₹{totalPrice.toFixed(0)}</span>
-                  </div>
-                  {!showCustomerForm ? (
-                    <Button
-                      onClick={sendToKitchen}
-                      disabled={isSendingOrder || isCreatingSession}
-                      className="w-full h-12 text-base font-semibold"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {isSendingOrder
-                        ? "Sending..."
-                        : isCreatingSession
-                        ? "Initializing..."
-                        : "Send to Kitchen"}
-                    </Button>
-                  ) : (
-                    <div className="space-y-2">
+                  {!currentTable && (
+                    <div className="mb-2">
+                      <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                        Table Number *
+                      </label>
                       <input
                         type="text"
-                        placeholder="Your Name *"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                        required
+                        placeholder="Enter table number"
+                        value={inputTableNumber}
+                        onChange={(e) => setInputTableNumber(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
                       />
-                      <input
-                        type="tel"
-                        placeholder="Phone Number *"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                        required
-                      />
+                    </div>
+                  )}
+                  
+                  {showCustomerForm ? (
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                          Your Name *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter your name"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 mb-1 block">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="10-digit phone number"
+                          value={customerPhone}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          maxLength={10}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                            phoneError ? "border-red-300" : "border-gray-300"
+                          }`}
+                          required
+                        />
+                        {phoneError && (
+                          <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           onClick={() => {
                             setShowCustomerForm(false);
                             setCustomerName("");
                             setCustomerPhone("");
+                            setPhoneError("");
                           }}
                           variant="outline"
                           className="flex-1"
@@ -626,14 +690,39 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                         </Button>
                         <Button
                           onClick={sendToKitchen}
-                          disabled={isSendingOrder || !customerName.trim() || !customerPhone.trim()}
+                          disabled={isSendingOrder || !customerName.trim() || !customerPhone.trim() || !validatePhone(customerPhone) || !currentTable}
                           className="flex-1"
                         >
                           <Send className="w-4 h-4 mr-2" />
-                          {isSendingOrder ? "Sending..." : "Confirm"}
+                          {isSendingOrder ? "Sending..." : "Send to Kitchen"}
                         </Button>
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between text-lg font-bold">
+                        <span>Total:</span>
+                        <span className="text-orange-600">₹{totalPrice.toFixed(0)}</span>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          if (!customerName.trim() || !customerPhone.trim()) {
+                            setShowCustomerForm(true);
+                          } else {
+                            sendToKitchen();
+                          }
+                        }}
+                        disabled={isSendingOrder || isCreatingSession || !currentTable}
+                        className="w-full h-12 text-base font-semibold"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        {isSendingOrder
+                          ? "Sending to Kitchen..."
+                          : isCreatingSession
+                          ? "Initializing..."
+                          : "Send to Kitchen"}
+                      </Button>
+                    </>
                   )}
                 </div>
               )}
@@ -649,6 +738,9 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 onClick={() => {
                   if (!customerName.trim() || !customerPhone.trim()) {
                     setShowCustomerForm(true);
+                    setShowCart(true);
+                  } else if (!currentTable) {
+                    showToast("Please enter a table number", "warning");
                     setShowCart(true);
                   } else {
                     sendToKitchen();
