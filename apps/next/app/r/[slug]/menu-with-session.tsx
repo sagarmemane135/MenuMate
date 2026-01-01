@@ -109,8 +109,44 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     const getInitialSessionData = (): { token: string | null; table: string | null } => {
       // Store a master key for the current restaurant's active session
       const masterKey = `active_session_${restaurant.slug}`;
-      const masterData = localStorage.getItem(masterKey);
       
+      // If table number is in URL, prioritize it and check if stored session matches
+      if (tableNumber) {
+        const masterData = localStorage.getItem(masterKey);
+        if (masterData) {
+          try {
+            const { token, table } = JSON.parse(masterData);
+            // If stored table doesn't match URL table, clear old session
+            if (table && table !== tableNumber) {
+              console.log(`[CLIENT] Table number changed from ${table} to ${tableNumber}, clearing old session`);
+              localStorage.removeItem(masterKey);
+              // Also clear the old table's session storage
+              const oldStorageKey = `session_${restaurant.slug}_${table}`;
+              localStorage.removeItem(oldStorageKey);
+            } else if (token && table === tableNumber) {
+              // Table matches, return stored session
+              return { token, table };
+            }
+          } catch (e) {
+            console.warn("[CLIENT] Failed to parse master session data:", e);
+          }
+        }
+        
+        // Check for session specific to this table
+        const storageKey = `session_${restaurant.slug}_${tableNumber}`;
+        const savedToken = localStorage.getItem(storageKey);
+        if (savedToken) {
+          // Also store in master key for easier retrieval
+          localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: tableNumber }));
+          return { token: savedToken, table: tableNumber };
+        }
+        
+        // No session found for this table, return null to create new one
+        return { token: null, table: null };
+      }
+      
+      // No table number in URL, try to restore from localStorage
+      const masterData = localStorage.getItem(masterKey);
       if (masterData) {
         try {
           const { token, table } = JSON.parse(masterData);
@@ -122,18 +158,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         }
       }
       
-      // First, try to get table number from URL
-      if (tableNumber) {
-        const storageKey = `session_${restaurant.slug}_${tableNumber}`;
-        const savedToken = localStorage.getItem(storageKey);
-        if (savedToken) {
-          // Also store in master key for easier retrieval
-          localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: tableNumber }));
-          return { token: savedToken, table: tableNumber };
-        }
-      }
-      
-      // If no table number in URL, try to find any saved session for this restaurant
       // Check localStorage for any session keys matching this restaurant
       const prefix = `session_${restaurant.slug}_`;
       for (let i = 0; i < localStorage.length; i++) {
