@@ -26,14 +26,23 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 - ✅ **Mobile-First Admin** - Manage from any device
 - ✅ **Real-Time Updates** - Change menu items instantly
 - ✅ **Order Management** - Track orders from kitchen to payment
+- ✅ **Kitchen Display System (KDS)** - Real-time order tracking with status updates
+- ✅ **Table Session Management** - View and manage all active table sessions
+- ✅ **Real-Time Notifications** - Instant WebSocket notifications for new orders
+- ✅ **Counter Payment Tracking** - Track and manage counter payments
 - ✅ **Beautiful Dashboard** - Professional, easy-to-use interface
 - ✅ **Multi-Restaurant** - Manage multiple locations
 
 ### For Customers
 - ✅ **Digital Menu** - Modern, easy-to-browse menu
 - ✅ **Real-Time Availability** - See what's available now
+- ✅ **Session-Based Ordering** - Place multiple orders per table session
+- ✅ **Real-Time Order Status** - See order status updates instantly (Pending → Cooking → Ready)
+- ✅ **Shopping Cart** - Add items and manage cart before ordering
+- ✅ **Payment Options** - Pay online (Razorpay) or at counter
+- ✅ **Consolidated Billing** - Single bill for all orders in a session
 - ✅ **Item Images** - Visual menu with descriptions
-- ✅ **Mobile Responsive** - Works on any device
+- ✅ **Mobile Responsive** - Fully optimized for mobile devices
 - ✅ **Fast & Clean** - No ads, no clutter
 
 ---
@@ -122,12 +131,19 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 - **bcryptjs** - Password hashing
 
 ### Database
-- **PostgreSQL 15** - Relational database
+- **PostgreSQL 15** - Relational database (Supabase)
 - **Drizzle ORM** - Type-safe ORM
 - **Connection Pooling** - Optimized connections
+- **Cloud Database** - Supabase PostgreSQL for production
+
+### Real-Time Communication
+- **Pusher** - Managed WebSocket service for real-time notifications
+- **Real-Time Updates** - Instant order status updates for kitchen and customers
 
 ### Infrastructure
-- **Docker** - Containerization
+- **Docker** - Containerization (local development)
+- **Vercel** - Production deployment
+- **Supabase** - Cloud PostgreSQL database
 - **Turborepo** - Monorepo management
 - **npm Workspaces** - Package management
 
@@ -217,13 +233,22 @@ MenuMate2/
 - Consolidated billing
 - "Send to Kitchen" without payment
 - "Pay at Counter" option
+- Customer name and phone persistence
+- Session persistence across page refreshes
 
-### 🚧 Phase 3 - Next Features (Next 2-3 Months)
+### ✅ Phase 3 - Real-Time Features (Complete)
+- WebSocket-based real-time notifications (Pusher)
+- Kitchen Display System (KDS) with real-time updates
+- Real-time order status updates for customers
+- Counter payment notifications
+- Table session management with detailed view
+- Mobile-responsive customer menu
+
+### 🚧 Phase 4 - Next Features (Next 2-3 Months)
 - Email/SMS notifications
 - Basic analytics dashboard
-- Order tracking for customers
-- Kitchen Display System (basic)
 - Print receipts
+- Order history and tracking
 
 ### 📅 Phase 3 - Advanced Features (2-4 Months)
 - Item variants and add-ons
@@ -337,4 +362,4 @@ For investors and partnerships: investors@menumate.in
 
 ---
 
-*Last Updated: December 2024*
+*Last Updated: January 2025*
