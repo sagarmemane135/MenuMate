@@ -71,6 +71,8 @@ export const tableSessions = pgTable("table_sessions", {
   paymentMethod: paymentMethodEnum("payment_method").default("pending"),
   paymentStatus: varchar("payment_status", { length: 20 }).default("pending"),
   paymentId: varchar("payment_id", { length: 100 }),
+  customerName: varchar("customer_name", { length: 100 }),
+  customerPhone: varchar("customer_phone", { length: 15 }),
   startedAt: timestamp("started_at").defaultNow().notNull(),
   closedAt: timestamp("closed_at"),
 }, (table) => ({

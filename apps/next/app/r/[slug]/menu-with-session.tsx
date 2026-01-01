@@ -537,11 +537,15 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           `Order sent to kitchen! Order #${orderId.slice(0, 8).toUpperCase()}`,
           "success"
         );
+        // Save customer details to localStorage for future orders
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`customer_name_${restaurant.slug}`, customerName.trim());
+          localStorage.setItem(`customer_phone_${restaurant.slug}`, customerPhone.replace(/\D/g, ""));
+        }
         clearCart();
         setShowCustomerForm(false);
-        setCustomerName("");
-        setCustomerPhone("");
         setShowCart(false);
+        // Don't clear customerName and customerPhone - keep them for next order
         // Keep the page open to show order status updates
       } else {
         console.error("[CLIENT] sendToKitchen - Order creation returned success:false or no data");

@@ -110,21 +110,30 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Emit WebSocket event to restaurant room (for kitchen staff)
+    console.log("[API] Emitting order:created event to restaurant:", session.restaurantId);
+    const orderData = {
+      id: newOrder.id,
+      items: newOrder.items as Array<{
+        itemId: string;
+        name: string;
+        quantity: number;
+        price: number;
+      }>,
+      totalAmount: newOrder.totalAmount,
+      status: newOrder.status,
+      tableNumber: session.tableNumber,
+      customerName: validatedData.customerName,
+      createdAt: newOrder.createdAt,
+      notes: newOrder.notes,
+    };
     await emitOrderCreated(session.restaurantId, {
-      order: {
-        id: newOrder.id,
-        items: newOrder.items,
-        totalAmount: newOrder.totalAmount,
-        status: newOrder.status,
-        tableNumber: session.tableNumber,
-        customerName: validatedData.customerName,
-        createdAt: newOrder.createdAt,
-      },
+      order: orderData,
       session: {
         id: session.id,
         tableNumber: session.tableNumber,
       },
     });
+    console.log("[API] Order:created event emitted successfully");
 
     // Also emit to session channel for customer
     const { emitOrderStatusUpdated } = await import("@/lib/websocket-events");
