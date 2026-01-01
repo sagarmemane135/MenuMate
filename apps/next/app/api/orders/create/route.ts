@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       status: newOrder.status as "pending" | "cooking" | "ready" | "served" | "paid" | "cancelled",
       tableNumber: session.tableNumber,
       customerName: validatedData.customerName,
-      notes: newOrder.notes,
+      notes: newOrder.notes || null,
       createdAt: newOrder.createdAt instanceof Date ? newOrder.createdAt.toISOString() : newOrder.createdAt,
     };
     await emitOrderCreated(session.restaurantId, {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button, useToast } from "@menumate/app";
 import { usePusherChannel } from "@/lib/pusher-client";
 import { Bell, Clock, CheckCircle, ChefHat } from "lucide-react";
@@ -36,6 +36,12 @@ export function KitchenPageClient({
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const { showToast } = useToast();
+  
+  // Keep reference to current orders for error recovery
+  const ordersRef = useRef<Order[]>(initialOrders);
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   // Listen for new orders
   usePusherChannel(
@@ -104,6 +110,18 @@ export function KitchenPageClient({
 
   const updateStatus = async (orderId: string, status: Order["status"]) => {
     setUpdatingOrderId(orderId);
+    
+    // Store current order state for error recovery
+    const currentOrder = orders.find((o) => o.id === orderId);
+    const previousStatus = currentOrder?.status;
+    
+    // Optimistically update the UI immediately
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, status } : order
+      )
+    );
+
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -112,22 +130,30 @@ export function KitchenPageClient({
       });
 
       if (response.ok) {
-        const result = await response.json();
-        // Update the order in state immediately (WebSocket will also update it, but this ensures instant UI update)
-        setOrders((prev) =>
-          prev.map((order) =>
-            order.id === orderId
-              ? { ...order, status: status }
-              : order
-          )
-        );
         showToast(`Order marked as ${status}`, "success");
+        // WebSocket will also update it, but we've already updated optimistically
       } else {
         const result = await response.json();
+        // Revert optimistic update on error
+        if (previousStatus) {
+          setOrders((prev) =>
+            prev.map((order) =>
+              order.id === orderId ? { ...order, status: previousStatus } : order
+            )
+          );
+        }
         showToast(result.error || "Failed to update order", "error");
       }
     } catch (error) {
       console.error("Failed to update order:", error);
+      // Revert optimistic update on error
+      if (previousStatus) {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === orderId ? { ...order, status: previousStatus } : order
+          )
+        );
+      }
       showToast("An error occurred", "error");
     } finally {
       setUpdatingOrderId(null);

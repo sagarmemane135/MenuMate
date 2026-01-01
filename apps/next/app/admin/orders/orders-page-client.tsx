@@ -48,8 +48,29 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
     `restaurant-${restaurantId}`,
     "order:created",
     (data: unknown) => {
-      const eventData = data as { order: Order; session: { id: string; tableNumber: string } };
-      setOrders((prev) => [eventData.order, ...prev]);
+      const eventData = data as { 
+        order: {
+          id: string;
+          tableNumber: string | null;
+          status: string;
+          totalAmount: string;
+          createdAt: Date | string;
+          sessionId?: string | null;
+          isPaid?: boolean;
+        };
+        session: { id: string; tableNumber: string };
+      };
+      // Map to Order interface (this page doesn't need items, customerName, notes)
+      const newOrder: Order = {
+        id: eventData.order.id,
+        tableNumber: eventData.order.tableNumber,
+        status: eventData.order.status as Order["status"],
+        totalAmount: eventData.order.totalAmount,
+        createdAt: eventData.order.createdAt,
+        sessionId: eventData.order.sessionId || null,
+        isPaid: eventData.order.isPaid || false,
+      };
+      setOrders((prev) => [newOrder, ...prev]);
       showToast("New order received! 🎉", "info");
     }
   );
