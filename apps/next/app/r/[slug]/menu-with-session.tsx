@@ -948,9 +948,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                         <Button
                           onClick={() => {
                             setShowCustomerForm(false);
-                            setCustomerName("");
-                            setCustomerPhone("");
                             setPhoneError("");
+                            // Don't clear customer details - keep them for next order
                           }}
                           variant="outline"
                           className="flex-1"
