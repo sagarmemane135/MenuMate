@@ -48,7 +48,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("menumate_cart", JSON.stringify(items));
   }, [items]);
 
-  const addItem = (item: Omit<CartItem, "quantity">) => {
+  const addItem = (item: Omit<CartItem, "quantity">, autoOpen: boolean = false) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find((i) => i.id === item.id);
       
@@ -60,7 +60,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       
       return [...prevItems, { ...item, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    // Only auto-open if explicitly requested (for backward compatibility)
+    if (autoOpen) {
+      setIsCartOpen(true);
+    }
   };
 
   const removeItem = (itemId: string) => {

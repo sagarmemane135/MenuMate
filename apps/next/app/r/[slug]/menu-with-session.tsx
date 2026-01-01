@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt } from "lucide-react";
 import { useCart, useToast } from "@menumate/app";
-import { CartDrawer } from "@menumate/app";
 import { Button } from "@menumate/app";
 import { usePusherChannel } from "@/lib/pusher-client";
 
@@ -977,7 +976,6 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         )}
       </div>
 
-      <CartDrawer />
     </>
   );
 }
