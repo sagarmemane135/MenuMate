@@ -194,15 +194,56 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
       const storageKey = `session_${restaurant.slug}_${effectiveTable}`;
       const savedToken = initialData.token || localStorage.getItem(storageKey);
       
-      // If we have a token, verify it
+      // If we have a token, verify it matches the current table
       if (savedToken) {
-        // Verify the token is still valid
-        verifySession(savedToken).then((isValid) => {
+        // Verify the token is still valid and matches the table
+        verifySession(savedToken).then(async (isValid) => {
           if (isValid) {
-            // Make sure token is set in state and localStorage
-            setSessionToken(savedToken);
-            const masterKey = `active_session_${restaurant.slug}`;
-            localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
+            // Double-check the token is for the correct table
+            try {
+              const verifyResponse = await fetch(`/api/sessions/${savedToken}`);
+              if (verifyResponse.ok) {
+                const verifyData = await verifyResponse.json();
+                if (verifyData.success && verifyData.session) {
+                  const sessionTable = verifyData.session.tableNumber;
+                  if (sessionTable === effectiveTable) {
+                    // Token is valid and matches table
+                    setSessionToken(savedToken);
+                    const masterKey = `active_session_${restaurant.slug}`;
+                    localStorage.setItem(masterKey, JSON.stringify({ token: savedToken, table: effectiveTable }));
+                  } else {
+                    // Token is for a different table, clear it and create new session
+                    console.log(`[CLIENT] useEffect - Token is for table ${sessionTable}, but current table is ${effectiveTable}. Creating new session.`);
+                    localStorage.removeItem(storageKey);
+                    const masterKey = `active_session_${restaurant.slug}`;
+                    localStorage.removeItem(masterKey);
+                    setSessionToken(null);
+                    createSession(effectiveTable);
+                  }
+                } else {
+                  // Invalid session data, create new
+                  localStorage.removeItem(storageKey);
+                  const masterKey = `active_session_${restaurant.slug}`;
+                  localStorage.removeItem(masterKey);
+                  setSessionToken(null);
+                  createSession(effectiveTable);
+                }
+              } else {
+                // Verification failed, create new session
+                localStorage.removeItem(storageKey);
+                const masterKey = `active_session_${restaurant.slug}`;
+                localStorage.removeItem(masterKey);
+                setSessionToken(null);
+                createSession(effectiveTable);
+              }
+            } catch (error) {
+              console.error("[CLIENT] useEffect - Error verifying token table:", error);
+              localStorage.removeItem(storageKey);
+              const masterKey = `active_session_${restaurant.slug}`;
+              localStorage.removeItem(masterKey);
+              setSessionToken(null);
+              createSession(effectiveTable);
+            }
           } else {
             localStorage.removeItem(storageKey);
             const masterKey = `active_session_${restaurant.slug}`;
@@ -371,11 +412,47 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     // Get table number (from URL or input)
     const table = tableNumber || inputTableNumber;
     
-    // If no session token, create one first
-    let token: string | null = sessionToken;
-    console.log("[CLIENT] sendToKitchen - current token:", token ? token.substring(0, 8) + "..." : "null");
+    if (!table) {
+      showToast("Please enter a table number to continue", "error");
+      return;
+    }
     
-    if (!token && table) {
+    // Check if current session token matches the current table number
+    let token: string | null = sessionToken;
+    let needsNewSession = false;
+    
+    if (token) {
+      // Verify the token is for the correct table
+      try {
+        const verifyResponse = await fetch(`/api/sessions/${token}`);
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          if (verifyData.success && verifyData.session) {
+            const sessionTable = verifyData.session.tableNumber;
+            if (sessionTable !== table) {
+              console.log(`[CLIENT] sendToKitchen - Token is for table ${sessionTable}, but current table is ${table}. Creating new session.`);
+              needsNewSession = true;
+              token = null; // Clear old token
+            }
+          } else {
+            needsNewSession = true;
+            token = null;
+          }
+        } else {
+          needsNewSession = true;
+          token = null;
+        }
+      } catch (error) {
+        console.error("[CLIENT] sendToKitchen - Error verifying token:", error);
+        needsNewSession = true;
+        token = null;
+      }
+    }
+    
+    console.log("[CLIENT] sendToKitchen - current token:", token ? token.substring(0, 8) + "..." : "null", "table:", table, "needsNewSession:", needsNewSession);
+    
+    // If no session token or token doesn't match table, create one first
+    if ((!token || needsNewSession) && table) {
       console.log("[CLIENT] sendToKitchen - No token, creating session first");
       setIsSendingOrder(true);
       showToast("Creating session...", "info");
@@ -403,14 +480,39 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         if (sessionData.success && sessionData.session?.sessionToken) {
           token = sessionData.session.sessionToken;
           const sessionTable = sessionData.session.tableNumber || table;
+          
+          // Clear old session token if it exists and is different
+          if (sessionToken && sessionToken !== token) {
+            console.log("[CLIENT] sendToKitchen - Clearing old session token");
+            setSessionToken(null);
+          }
+          
           setSessionToken(token);
+          
           if (sessionTable && token && typeof window !== "undefined") {
             try {
               const storageKey = `session_${restaurant.slug}_${sessionTable}`;
               const masterKey = `active_session_${restaurant.slug}`;
+              
+              // Clear old master session if table changed
+              const oldMasterData = localStorage.getItem(masterKey);
+              if (oldMasterData) {
+                try {
+                  const oldData = JSON.parse(oldMasterData);
+                  if (oldData.table && oldData.table !== sessionTable) {
+                    const oldStorageKey = `session_${restaurant.slug}_${oldData.table}`;
+                    localStorage.removeItem(oldStorageKey);
+                    console.log(`[CLIENT] sendToKitchen - Cleared old session for table ${oldData.table}`);
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+              
               // Store in both specific key and master key for persistence
               window.localStorage.setItem(storageKey, token);
               window.localStorage.setItem(masterKey, JSON.stringify({ token, table: sessionTable }));
+              
               // Update inputTableNumber and URL if needed
               if (sessionTable !== inputTableNumber) {
                 setInputTableNumber(sessionTable);
