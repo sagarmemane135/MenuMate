@@ -22,6 +22,28 @@ export async function GET(
       );
     }
 
+    // Check if session is active but older than 1 hour (inactive timeout)
+    if (session.status === "active") {
+      const sessionAge = Date.now() - new Date(session.startedAt).getTime();
+      const oneHourInMs = 60 * 60 * 1000;
+      
+      if (sessionAge > oneHourInMs) {
+        // Auto-close the inactive session
+        await db
+          .update(tableSessions)
+          .set({
+            status: "closed",
+            closedAt: new Date(),
+          })
+          .where(eq(tableSessions.id, session.id));
+        
+        console.log(`[SESSION VERIFY] Auto-closed inactive session ${sessionToken} (age: ${Math.floor(sessionAge / 1000 / 60)} minutes)`);
+        
+        // Update session object to reflect the change
+        session.status = "closed";
+      }
+    }
+
     // Get all orders for this session
     const sessionOrders = await db
       .select()

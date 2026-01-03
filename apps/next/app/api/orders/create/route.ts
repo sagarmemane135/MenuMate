@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
         sessionToken: tableSessions.sessionToken,
         customerName: tableSessions.customerName,
         customerPhone: tableSessions.customerPhone,
+        startedAt: tableSessions.startedAt,
       })
       .from(tableSessions)
       .where(eq(tableSessions.sessionToken, validatedData.sessionToken))
@@ -44,6 +45,24 @@ export async function POST(request: NextRequest) {
 
     if (!session || session.status !== "active") {
       return errorResponse("Invalid or closed session", 400);
+    }
+
+    // Check if session is older than 1 hour (inactive timeout)
+    const sessionAge = Date.now() - new Date(session.startedAt).getTime();
+    const oneHourInMs = 60 * 60 * 1000;
+    
+    if (sessionAge > oneHourInMs) {
+      // Auto-close the inactive session
+      await db
+        .update(tableSessions)
+        .set({
+          status: "closed",
+          closedAt: new Date(),
+        })
+        .where(eq(tableSessions.id, session.id));
+      
+      console.log(`[ORDER CREATE] Auto-closed inactive session ${session.sessionToken} (age: ${Math.floor(sessionAge / 1000 / 60)} minutes)`);
+      return errorResponse("Session has been inactive for too long and was automatically closed. Please create a new session.", 400);
     }
 
     // Validate menu items and calculate total

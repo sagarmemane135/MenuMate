@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, tableSessions, eq, and, lt, sql } from "@menumate/db";
+import { db, tableSessions, eq, and, sql } from "@menumate/db";
 
 /**
  * Cron job to automatically close inactive sessions
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tableSessions.status, "active"),
-          lt(tableSessions.startedAt, oneHourAgo)
+          sql`${tableSessions.startedAt} < ${oneHourAgo}`
         )
       );
 

@@ -75,16 +75,35 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingSession) {
-      // Return existing session
-      return NextResponse.json({
-        success: true,
-        session: {
-          id: existingSession.id,
-          sessionToken: existingSession.sessionToken,
-          tableNumber: existingSession.tableNumber,
-          status: existingSession.status,
-        },
-      });
+      // Check if the existing session is older than 1 hour (inactive timeout)
+      const sessionAge = Date.now() - new Date(existingSession.startedAt).getTime();
+      const oneHourInMs = 60 * 60 * 1000;
+      
+      if (sessionAge > oneHourInMs) {
+        // Auto-close the inactive session and create a new one
+        await db
+          .update(tableSessions)
+          .set({
+            status: "closed",
+            closedAt: new Date(),
+          })
+          .where(eq(tableSessions.id, existingSession.id));
+        
+        console.log(`[SESSION CREATE API] Auto-closed inactive session ${existingSession.sessionToken} (age: ${Math.floor(sessionAge / 1000 / 60)} minutes)`);
+        // Continue to create a new session below
+        existingSession = null;
+      } else {
+        // Return existing active session
+        return NextResponse.json({
+          success: true,
+          session: {
+            id: existingSession.id,
+            sessionToken: existingSession.sessionToken,
+            tableNumber: existingSession.tableNumber,
+            status: existingSession.status,
+          },
+        });
+      }
     }
 
     // Create new session
