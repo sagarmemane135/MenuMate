@@ -111,15 +111,17 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
   return (
     <div className="space-y-6">
       {/* Restaurant Card */}
-      <Card>
+      <div className="bg-white border border-neutral-200 rounded-card shadow-card">
         {restaurantData ? (
-          <div>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start space-x-3">
-                <UtensilsCrossed className="w-10 h-10 text-orange-500 flex-shrink-0 mt-1" />
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <UtensilsCrossed className="w-6 h-6 text-primary-600" />
+                </div>
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-2">{restaurantData.name}</p>
-                  <p className="text-sm text-gray-600 font-mono bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                  <h2 className="text-xl font-semibold text-neutral-900 mb-2">{restaurantData.name}</h2>
+                  <p className="text-sm text-neutral-600 font-mono bg-neutral-100 px-2.5 py-1 rounded inline-block">
                     /{restaurantData.slug}
                   </p>
                 </div>
@@ -128,22 +130,23 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEditForm(true)}
+                className="btn-secondary"
               >
-                <Edit className="w-4 h-4 mr-1" />
+                <Edit className="w-4 h-4 mr-1.5" />
                 Edit
               </Button>
             </div>
             
             <div className="flex items-center space-x-2 mb-4">
-              <span className="text-sm font-semibold text-gray-600">Status:</span>
+              <span className="text-sm font-medium text-neutral-600">Status:</span>
               <span
-                className={`px-3 py-1 text-sm font-bold rounded-full ${
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   restaurantData.isActive 
-                    ? "bg-green-100 text-green-700" 
-                    : "bg-red-100 text-red-700"
+                    ? "bg-success-50 text-success-700" 
+                    : "bg-neutral-100 text-neutral-700"
                 }`}
               >
-                {restaurantData.isActive ? "● Active" : "● Inactive"}
+                {restaurantData.isActive ? "Active" : "Inactive"}
               </span>
             </div>
 
@@ -152,136 +155,164 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
                 href={menuUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
+                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors text-sm"
               >
-                View Public Menu →
+                View Public Menu
+                <ExternalLink className="w-4 h-4 ml-2" />
               </a>
             )}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <UtensilsCrossed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 font-medium">No restaurant found</p>
+          <div className="text-center py-12 p-6">
+            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+              <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
+            </div>
+            <p className="text-sm text-neutral-600">No restaurant found</p>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* QR Code Section */}
       {restaurantData && (
-        <Card title="QR Code for Customers">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* QR Code Display */}
-            <div className="flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-xl p-6">
-              {isGeneratingQR ? (
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-gray-600">Generating QR Code...</p>
-                </div>
-              ) : qrCode ? (
-                <>
-                  <div className="bg-white p-4 rounded-xl shadow-lg mb-4">
-                    <img src={qrCode} alt="Restaurant QR Code" className="w-64 h-64" />
+        <div className="bg-white border border-neutral-200 rounded-card shadow-card">
+          <div className="px-6 py-4 border-b border-neutral-200">
+            <h2 className="text-base font-semibold text-neutral-900">QR Code for Customers</h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* QR Code Display */}
+              <div className="flex flex-col items-center justify-center bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+                {isGeneratingQR ? (
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-neutral-600">Generating QR Code...</p>
                   </div>
-                  <p className="text-sm text-gray-600 text-center">
-                    Scan to view menu
-                  </p>
-                </>
-              ) : (
-                <div className="flex flex-col items-center space-y-3">
-                  <QrCode className="w-16 h-16 text-gray-400" />
-                  <p className="text-sm text-gray-600">No QR code generated</p>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col justify-center space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Share Your Menu
-                </h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Print this QR code and place it on your tables. Customers can scan it to view your menu instantly.
-                </p>
-                <div className="mb-4">
-                  <label className="text-xs font-semibold text-gray-700 mb-1 block">
-                    Table Number (for QR code URL)
-                  </label>
-                  <input
-                    type="text"
-                    value={tableNumber}
-                    onChange={(e) => {
-                      setTableNumber(e.target.value);
-                      setQrCode(null); // Reset QR code to regenerate
-                    }}
-                    placeholder="e.g., 1, 2, 3..."
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    The QR code will include this table number in the URL
-                  </p>
-                </div>
+                ) : qrCode ? (
+                  <>
+                    <div className="bg-white p-4 rounded-lg shadow-soft mb-4">
+                      <img src={qrCode} alt="Restaurant QR Code" className="w-48 h-48" />
+                    </div>
+                    <p className="text-xs text-neutral-600 text-center">
+                      Scan to view menu
+                    </p>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 rounded-lg bg-neutral-200 flex items-center justify-center">
+                      <QrCode className="w-6 h-6 text-neutral-500" />
+                    </div>
+                    <p className="text-sm text-neutral-600">No QR code generated</p>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  onClick={downloadQRCode}
-                  disabled={!qrCode}
-                  className="w-full"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Download QR Code
-                </Button>
+              {/* Actions */}
+              <div className="flex flex-col justify-center space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+                    Share Your Menu
+                  </h3>
+                  <p className="text-sm text-neutral-600 mb-4">
+                    Print this QR code and place it on your tables. Customers can scan it to view your menu instantly.
+                  </p>
+                  <div className="mb-4">
+                    <label className="text-xs font-medium text-neutral-700 mb-1.5 block">
+                      Table Number (for QR code URL)
+                    </label>
+                    <input
+                      type="text"
+                      value={tableNumber}
+                      onChange={(e) => {
+                        setTableNumber(e.target.value);
+                        setQrCode(null);
+                      }}
+                      placeholder="e.g., 1, 2, 3..."
+                      className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1.5">
+                      The QR code will include this table number in the URL
+                    </p>
+                  </div>
+                </div>
 
-                <Button
-                  onClick={copyMenuLink}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Share2 className="w-5 h-5 mr-2" />
-                  Copy Menu Link
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={downloadQRCode}
+                    disabled={!qrCode}
+                    className="w-full btn-primary"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download QR Code
+                  </Button>
 
-                <Button
-                  onClick={generateQRCode}
-                  variant="outline"
-                  className="w-full"
-                  disabled={isGeneratingQR}
-                >
-                  <QrCode className="w-5 h-5 mr-2" />
-                  Regenerate QR Code
-                </Button>
-              </div>
+                  <Button
+                    onClick={copyMenuLink}
+                    variant="outline"
+                    className="w-full btn-secondary"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Copy Menu Link
+                  </Button>
 
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-800 font-medium">
-                  💡 <strong>Pro Tip:</strong> Print multiple QR codes and place them on each table for best results!
-                </p>
+                  <Button
+                    onClick={generateQRCode}
+                    variant="outline"
+                    className="w-full btn-secondary"
+                    disabled={isGeneratingQR}
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Regenerate QR Code
+                  </Button>
+                </div>
+
+                <div className="mt-2 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                  <p className="text-xs text-primary-900">
+                    <strong>Tip:</strong> Print multiple QR codes and place them on each table for best results.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Quick Actions Card */}
-      <Card title="Quick Actions">
-        <div className="space-y-3">
-          <a
-            href="/admin/menu"
-            className="flex items-center space-x-3 p-3 bg-gradient-to-r from-orange-50 to-white border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:shadow-md transition-all"
-          >
-            <Menu className="w-5 h-5 text-orange-500 flex-shrink-0" />
-            <span className="font-semibold text-gray-900">Manage Menu →</span>
-          </a>
-          <a
-            href="/admin/orders"
-            className="flex items-center space-x-3 p-3 bg-gradient-to-r from-blue-50 to-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all"
-          >
-            <Package className="w-5 h-5 text-blue-500 flex-shrink-0" />
-            <span className="font-semibold text-gray-900">View Orders →</span>
-          </a>
+      <div className="bg-white border border-neutral-200 rounded-card shadow-card">
+        <div className="px-6 py-4 border-b border-neutral-200">
+          <h2 className="text-base font-semibold text-neutral-900">Quick Actions</h2>
         </div>
-      </Card>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a
+              href="/admin/menu"
+              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <Menu className="w-5 h-5 text-primary-600" />
+              </div>
+              <span className="text-sm font-medium text-neutral-900">Manage Menu</span>
+            </a>
+            <a
+              href="/admin/orders"
+              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <Package className="w-5 h-5 text-primary-600" />
+              </div>
+              <span className="text-sm font-medium text-neutral-900">View Orders</span>
+            </a>
+            <a
+              href="/admin/sessions"
+              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-primary-600" />
+              </div>
+              <span className="text-sm font-medium text-neutral-900">Table Sessions</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
