@@ -62,11 +62,11 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
       }
     }
 
-    // Enable test button with Ctrl+Shift+T
+    // Enable test button with Ctrl+Alt+P (P for Pusher test)
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "T") {
+      if (e.ctrlKey && e.altKey && e.key === "p") {
         setShowTestButton((prev) => !prev);
-        console.log("[TEST] Test button toggled");
+        console.log("[TEST] Test button toggled", !showTestButton);
       }
     };
     
@@ -190,10 +190,12 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm w-full space-y-2">
-      {/* Test Button - Hidden by default, show with Ctrl+Shift+T */}
+      {/* Test Button - Hidden by default, show with Ctrl+Alt+P */}
       {showTestButton && (
         <div className="bg-primary-50 border border-primary-300 rounded-lg p-3 mb-2">
-          <p className="text-xs text-primary-700 mb-2">Pusher Test Mode</p>
+          <p className="text-xs text-primary-700 mb-2">
+            Pusher Test Mode <span className="text-primary-500">(Ctrl+Alt+P to hide)</span>
+          </p>
           <Button
             onClick={testPusherConnection}
             size="sm"
