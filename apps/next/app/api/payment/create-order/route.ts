@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log credentials (masked for security)
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    console.log("[PAYMENT] Using Key ID:", keyId ? `${keyId.substring(0, 8)}...${keyId.substring(keyId.length - 4)}` : "MISSING");
+    console.log("[PAYMENT] Key Secret length:", keySecret?.length || 0);
+
     const body = await request.json();
     const validatedData = createOrderSchema.parse(body);
 
