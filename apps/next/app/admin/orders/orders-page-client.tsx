@@ -21,12 +21,12 @@ interface OrdersPageClientProps {
 }
 
 const statusColors = {
-  pending: "bg-yellow-100 text-yellow-800",
-  cooking: "bg-blue-100 text-blue-800",
-  ready: "bg-green-100 text-green-800",
-  served: "bg-purple-100 text-purple-800",
-  paid: "bg-gray-100 text-gray-800",
-  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-warning-50 text-warning-700",
+  cooking: "bg-primary-50 text-primary-700",
+  ready: "bg-success-50 text-success-700",
+  served: "bg-neutral-100 text-neutral-700",
+  paid: "bg-neutral-100 text-neutral-700",
+  cancelled: "bg-error-50 text-error-700",
 };
 
 const statusOptions: Array<{ value: Order["status"]; label: string }> = [
@@ -121,82 +121,87 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
   };
 
   return (
-    <div className="px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-        <p className="mt-2 text-gray-600">Manage and track restaurant orders</p>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-neutral-900">Orders</h1>
+        <p className="mt-1 text-sm text-neutral-600">Track and manage all restaurant orders</p>
       </div>
 
       {orders.length === 0 ? (
-        <Card>
-          <p className="text-gray-600 text-center py-8">No orders yet</p>
-        </Card>
+        <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
+          <p className="text-sm text-neutral-600">No orders yet</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {orders.map((order) => (
-            <Card key={order.id}>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Order #{order.id.slice(0, 8)}
-                    </h3>
-                    <span
-                      className={`text-xs px-2 py-1 rounded font-medium ${
-                        statusColors[order.status]
-                      }`}
-                    >
-                      {order.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Table: {order.tableNumber}
-                    {order.sessionId && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                        Session
+            <div key={order.id} className="bg-white border border-neutral-200 rounded-card shadow-card hover:shadow-dropdown transition-shadow">
+              <div className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-sm font-semibold text-neutral-900">
+                        Order #{order.id.slice(0, 8)}
+                      </h3>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                          statusColors[order.status]
+                        }`}
+                      >
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </span>
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-600" suppressHydrationWarning>
-                    Created: {formatIndianDateTime(order.createdAt)}
-                  </p>
-                  {!order.isPaid && order.sessionId && (
-                    <p className="text-xs text-orange-600 font-semibold mt-1">
-                      ⏳ Pending payment (part of active session)
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-gray-900">
-                      ₹{parseFloat(order.totalAmount).toFixed(2)}
-                    </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-neutral-600">
+                        Table: <span className="font-medium text-neutral-900">{order.tableNumber}</span>
+                        {order.sessionId && (
+                          <span className="ml-2 text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
+                            Session
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-neutral-500" suppressHydrationWarning>
+                        {formatIndianDateTime(order.createdAt)}
+                      </p>
+                      {!order.isPaid && order.sessionId && (
+                        <p className="text-xs text-warning-600 font-medium mt-2">
+                          Pending payment (active session)
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        handleStatusUpdate(
-                          order.id,
-                          e.target.value as Order["status"]
-                        )
-                      }
-                      disabled={updatingOrderId === order.id}
-                      className="text-sm rounded-md border border-gray-300 px-2 py-1"
-                    >
-                      {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-xs text-neutral-500 mb-1">Amount</p>
+                      <p className="text-lg font-semibold text-neutral-900">
+                        ₹{parseFloat(order.totalAmount).toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1.5">
+                        Status
+                      </label>
+                      <select
+                        value={order.status}
+                        onChange={(e) =>
+                          handleStatusUpdate(
+                            order.id,
+                            e.target.value as Order["status"]
+                          )
+                        }
+                        disabled={updatingOrderId === order.id}
+                        className="text-sm rounded-lg border border-neutral-300 px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
+                      >
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}

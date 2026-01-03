@@ -154,158 +154,159 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
   };
 
   return (
-    <div className="px-4 py-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Table Sessions</h1>
-        <p className="text-gray-600 mb-6">
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-neutral-900">Table Sessions</h1>
+        <p className="mt-1 text-sm text-neutral-600">
           Track all dining sessions and their payment status
         </p>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <div className="p-4 flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-sm text-gray-600">Active Tables</p>
-              </div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stat-label">Active Tables</p>
+              <p className="stat-value text-success-600">{stats.active}</p>
             </div>
-          </Card>
-
-          <Card>
-            <div className="p-4 flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-                <Store className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.closed}</p>
-                <p className="text-sm text-gray-600">Pay at Counter</p>
-              </div>
+            <div className="w-12 h-12 rounded-lg bg-success-50 flex items-center justify-center">
+              <Users className="w-6 h-6 text-success-600" />
             </div>
-          </Card>
-
-          <Card>
-            <div className="p-4 flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.paid}</p>
-                <p className="text-sm text-gray-600">Paid Online</p>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Filter */}
-        <div className="flex space-x-2 mb-6 overflow-x-auto">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              filter === "all"
-                ? "bg-orange-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            All ({sessions.length})
-          </button>
-          <button
-            onClick={() => setFilter("active")}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              filter === "active"
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Active ({stats.active})
-          </button>
-          <button
-            onClick={() => setFilter("closed")}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              filter === "closed"
-                ? "bg-orange-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Counter ({stats.closed})
-          </button>
-          <button
-            onClick={() => setFilter("paid")}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              filter === "paid"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Paid ({stats.paid})
-          </button>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stat-label">Pay at Counter</p>
+              <p className="stat-value text-warning-600">{stats.closed}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-warning-50 flex items-center justify-center">
+              <Store className="w-6 h-6 text-warning-600" />
+            </div>
+          </div>
         </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="stat-label">Paid Online</p>
+              <p className="stat-value text-primary-600">{stats.paid}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-primary-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter */}
+      <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            filter === "all"
+              ? "bg-primary-600 text-white"
+              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+          }`}
+        >
+          All ({sessions.length})
+        </button>
+        <button
+          onClick={() => setFilter("active")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            filter === "active"
+              ? "bg-success-600 text-white"
+              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+          }`}
+        >
+          Active ({stats.active})
+        </button>
+        <button
+          onClick={() => setFilter("closed")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            filter === "closed"
+              ? "bg-warning-600 text-white"
+              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+          }`}
+        >
+          Counter ({stats.closed})
+        </button>
+        <button
+          onClick={() => setFilter("paid")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            filter === "paid"
+              ? "bg-primary-600 text-white"
+              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+          }`}
+        >
+          Paid ({stats.paid})
+        </button>
+      </div>
 
         {/* Sessions List */}
         {filteredSessions.length === 0 ? (
-          <Card>
-            <div className="p-12 text-center">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No Sessions</h3>
-              <p className="text-gray-600">
-                {filter === "all"
-                  ? "No table sessions yet"
-                  : `No ${filter} sessions`}
-              </p>
+          <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
+            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+              <Users className="w-6 h-6 text-neutral-400" />
             </div>
-          </Card>
+            <h3 className="text-base font-semibold text-neutral-900 mb-1">No Sessions</h3>
+            <p className="text-sm text-neutral-600">
+              {filter === "all"
+                ? "No table sessions yet"
+                : `No ${filter} sessions`}
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredSessions.map((session) => (
-              <Card key={session.id}>
+              <div key={session.id} className="bg-white border border-neutral-200 rounded-card shadow-card hover:shadow-dropdown transition-shadow">
                 <div className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <h3 className="text-lg font-semibold text-neutral-900">
                           Table {session.tableNumber}
                         </h3>
                         <span
-                          className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
                             session.status === "active"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-success-50 text-success-700"
                               : session.status === "paid"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-orange-100 text-orange-700"
+                              ? "bg-primary-50 text-primary-700"
+                              : "bg-warning-50 text-warning-700"
                           }`}
                         >
-                          {session.status.toUpperCase()}
+                          {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
                         </span>
                       </div>
 
-                      <div className="space-y-1 text-sm text-gray-600">
+                      <div className="space-y-1.5 text-sm text-neutral-600">
                         <p className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-4 h-4 text-neutral-400" />
                           <span suppressHydrationWarning>
-                            Started: {formatIndianDateTime(session.startedAt)}
+                            {formatIndianDateTime(session.startedAt)}
                           </span>
                         </p>
                         {session.closedAt && (
                           <p className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-4 h-4 text-neutral-400" />
                             <span suppressHydrationWarning>
                               Closed: {formatIndianDateTime(session.closedAt)}
                             </span>
                           </p>
                         )}
-                        <p>Orders: {session.ordersCount}</p>
+                        <p className="font-medium text-neutral-700">{session.ordersCount} {session.ordersCount === 1 ? 'order' : 'orders'}</p>
                         {session.paymentMethod && session.paymentMethod !== "pending" && (
                           <p className="flex items-center space-x-2">
                             {session.paymentMethod === "online" ? (
-                              <CreditCard className="w-4 h-4" />
+                              <CreditCard className="w-4 h-4 text-neutral-400" />
                             ) : (
-                              <Store className="w-4 h-4" />
+                              <Store className="w-4 h-4 text-neutral-400" />
                             )}
                             <span>
-                              Payment: {session.paymentMethod === "online" ? "Online" : "Counter"}
+                              {session.paymentMethod === "online" ? "Paid Online" : "Pay at Counter"}
                             </span>
                           </p>
                         )}
@@ -313,28 +314,27 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                     </div>
 
                     <div className="text-right">
-                      <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-                      <p className="text-3xl font-bold text-orange-600">
+                      <p className="text-xs text-neutral-500 mb-1">Total Amount</p>
+                      <p className="text-2xl font-semibold text-neutral-900 mb-3">
                         ₹{Number(session.totalAmount).toFixed(2)}
                       </p>
                       <Button
                         onClick={() => fetchSessionDetails(session)}
                         disabled={isLoadingDetails}
                         variant="outline"
+                        className="btn-secondary text-sm"
                         size="sm"
-                        className="mt-3"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
+                        <Eye className="w-4 h-4 mr-1.5" />
                         {isLoadingDetails && selectedSession?.id === session.id ? "Loading..." : "View Details"}
                       </Button>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}
-      </div>
 
       {/* Session Details Modal */}
       {selectedSession && sessionDetails && (
