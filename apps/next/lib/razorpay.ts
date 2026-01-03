@@ -10,20 +10,10 @@ export function getRazorpayInstance(): Razorpay {
     throw new Error("Razorpay credentials not configured");
   }
 
-  // Debug: Check for whitespace or encoding issues
-  const keyIdTrimmed = keyId.trim();
-  const keySecretTrimmed = keySecret.trim();
-  
-  console.log("[RAZORPAY] Key ID exact length:", keyId.length, "vs trimmed:", keyIdTrimmed.length);
-  console.log("[RAZORPAY] Key Secret exact length:", keySecret.length, "vs trimmed:", keySecretTrimmed.length);
-  
-  if (keyId !== keyIdTrimmed || keySecret !== keySecretTrimmed) {
-    console.warn("[RAZORPAY] WARNING: Whitespace detected in credentials!");
-  }
-
+  // Trim credentials to avoid whitespace issues
   return new Razorpay({
-    key_id: keyIdTrimmed,
-    key_secret: keySecretTrimmed,
+    key_id: keyId.trim(),
+    key_secret: keySecret.trim(),
   });
 }
 
