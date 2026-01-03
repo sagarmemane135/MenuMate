@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { Users, Calendar, CreditCard, Store, CheckCircle2, Clock, Eye, X, Receipt } from "lucide-react";
 import { formatIndianDateTime } from "@/lib/date-utils";
@@ -37,7 +37,37 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [filter, setFilter] = useState<"all" | "active" | "closed" | "paid">("all");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const { showToast } = useToast();
+
+  // Cleanup inactive sessions when page loads
+  useEffect(() => {
+    const cleanupInactiveSessions = async () => {
+      setIsCleaningUp(true);
+      try {
+        const response = await fetch("/api/sessions/cleanup-inactive", {
+          method: "POST",
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.closedCount > 0) {
+            console.log(`[SESSIONS] Auto-closed ${result.closedCount} inactive sessions`);
+            showToast(`Automatically closed ${result.closedCount} inactive session(s)`, "info");
+            
+            // Refresh sessions to show updated status
+            window.location.reload();
+          }
+        }
+      } catch (error) {
+        console.error("[SESSIONS] Failed to cleanup inactive sessions:", error);
+      } finally {
+        setIsCleaningUp(false);
+      }
+    };
+
+    cleanupInactiveSessions();
+  }, []); // Run once on mount
 
   // Listen for session updates (when orders are added, totals change)
   usePusherChannel(
