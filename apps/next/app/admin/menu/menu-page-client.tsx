@@ -172,14 +172,14 @@ export function MenuPageClient({
   const allCategories = categories.map((cat) => ({ id: cat.id, name: cat.name }));
 
   return (
-    <div className="px-4 py-6">
-      <div className="mb-6 flex justify-between items-center">
+    <div>
+      <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Menu Management</h1>
-          <p className="mt-2 text-gray-600">Manage your restaurant menu</p>
+          <h1 className="text-2xl font-semibold text-neutral-900">Menu Management</h1>
+          <p className="mt-1 text-sm text-neutral-600">Organize and manage your restaurant menu</p>
         </div>
         {!showAddCategoryForm && !showAddItemForm && !editingItem && (
-          <Button onClick={() => setShowAddCategoryForm(true)}>
+          <Button onClick={() => setShowAddCategoryForm(true)} className="btn-primary">
             Add Category
           </Button>
         )}
@@ -218,21 +218,22 @@ export function MenuPageClient({
       )}
 
       {categories.length === 0 ? (
-        <Card>
-          <p className="text-gray-600 text-center py-8">
+        <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
+          <p className="text-sm text-neutral-600">
             No categories yet. Create your first category to get started.
           </p>
-        </Card>
+        </div>
       ) : (
         <div className="space-y-6">
           {categories.map((category) => (
-            <Card key={category.id}>
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-semibold">{category.name}</h2>
+            <div key={category.id} className="bg-white border border-neutral-200 rounded-card shadow-card">
+              <div className="px-6 py-4 border-b border-neutral-200 flex justify-between items-center">
+                <h2 className="text-base font-semibold text-neutral-900">{category.name}</h2>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="btn-secondary text-sm"
                     onClick={async () => {
                       const newName = prompt("Enter new category name:", category.name);
                       if (newName && newName.trim() && newName !== category.name) {
@@ -244,7 +245,6 @@ export function MenuPageClient({
                           });
                           if (response.ok) {
                             const result = await response.json();
-                            // Update category name in state
                             setCategories((prev) =>
                               prev.map((cat) =>
                                 cat.id === category.id
@@ -264,51 +264,52 @@ export function MenuPageClient({
                   <Button
                     variant="danger"
                     size="sm"
+                    className="text-sm"
                     onClick={() => handleDeleteCategory(category.id, category.name)}
                   >
                     Delete
                   </Button>
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 {category.menuItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">No items in this category</p>
+                  <p className="text-sm text-neutral-500">No items in this category</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {category.menuItems.map((item) => (
                       <div
                         key={item.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                        className="border border-neutral-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-soft transition-all"
                       >
                         {item.imageUrl && (
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="w-full h-32 object-cover rounded-md mb-3"
+                            className="w-full h-32 object-cover rounded-lg mb-3"
                           />
                         )}
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                          <h3 className="font-medium text-neutral-900 text-sm">{item.name}</h3>
                           <button
                             onClick={() => setEditingItem(item)}
-                            className="text-blue-600 hover:text-blue-700 text-sm"
+                            className="text-primary-600 hover:text-primary-700 text-xs font-medium"
                           >
                             Edit
                           </button>
                         </div>
                         {item.description && (
-                          <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                          <p className="text-xs text-neutral-600 mb-2 line-clamp-2">{item.description}</p>
                         )}
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-lg font-bold text-blue-600">
+                        <div className="flex justify-between items-center">
+                          <p className="text-base font-semibold text-neutral-900">
                             ₹{parseFloat(item.price).toFixed(2)}
                           </p>
                           <button
                             onClick={() => handleToggleAvailability(item.id, item.isAvailable)}
-                            className={`text-xs px-2 py-1 rounded font-medium ${
+                            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                               item.isAvailable
-                                ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                : "bg-red-100 text-red-800 hover:bg-red-200"
+                                ? "bg-success-50 text-success-700 hover:bg-success-100"
+                                : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
                             }`}
                           >
                             {item.isAvailable ? "Available" : "Unavailable"}
@@ -322,6 +323,7 @@ export function MenuPageClient({
                   <Button
                     variant="outline"
                     size="sm"
+                    className="btn-secondary"
                     onClick={() =>
                       setShowAddItemForm({
                         categoryId: category.id,
@@ -333,7 +335,7 @@ export function MenuPageClient({
                   </Button>
                 )}
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}
