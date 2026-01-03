@@ -1,0 +1,20 @@
+[33ma265769[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: simplify vercel install command
+[33m1d36e5a[m fix: configure vercel for monorepo with proper paths
+[33m0e2c12c[m fix: update vercel.json to use turbo build command
+[33m77f3b84[m fix: configure vercel.json for monorepo deployment
+[33m6431d9b[m refactor: implement on-demand session cleanup for free tier - check session age on every API call instead of frequent cron jobs
+[33mf2810a8[m feat: add order confirmation dialog and prevent double submission, add auto-cleanup for inactive sessions
+[33mfe71f73[m fix: remove duplicate time ago display in kitchen display system
+[33m6b1e033[m feat: handle shared sessions - notify users when session is closed/paid by another user
+[33m783201d[m fix: verify session token matches table number before using - prevents orders going to wrong table
+[33me32e77f[m fix: add 'served' status to order_status enum in database - fixes KDS showing 0 orders
+[33m397a99b[m fix: prevent session reuse when table number changes - clear old session for new table
+[33m1c61a82[m fix: add comprehensive debug logs for KDS orders and session totals real-time updates
+[33m148d2d5[m fix: add debug logs for WebSocket events and fix KDS order display + session totals real-time updates
+[33m597535e[m feat: fix real-time updates - orders show in KDS, session totals update instantly, optimistic UI updates
+[33m3141347[m feat: add real-time updates for orders, sessions, and kitchen display system
+[33m6080897[m feat: implement Indian timezone (IST) for all date/time displays
+[33me078740[m docs: update document version and date
+[33mced1ee7[m docs: update Executive Summary with current implementation status
+[33m7077ddb[m docs: update README and documentation to reflect current implementation status
+[33mdd4c024[m chore: remove customer columns migration script
