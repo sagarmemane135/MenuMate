@@ -43,42 +43,47 @@ export function AddCategoryForm({ onSuccess, onCancel }: AddCategoryFormProps) {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Add New Category</h2>
+    <div className="bg-white border border-neutral-200 rounded-card shadow-card">
+      <div className="px-6 py-4 border-b border-neutral-200">
+        <h2 className="text-base font-semibold text-neutral-900">Add New Category</h2>
+      </div>
       
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
+      <div className="p-6">
+        {error && (
+          <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-lg">
+            <p className="text-sm text-error-700">{error}</p>
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Category Name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={error && !name ? "Category name is required" : undefined}
-          disabled={isLoading}
-          required
-          autoFocus
-        />
-
-        <div className="flex gap-2 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Category Name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            error={error && !name ? "Category name is required" : undefined}
             disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Create Category
-          </Button>
-        </div>
-      </form>
-    </Card>
+            required
+            autoFocus
+          />
+
+          <div className="flex gap-2 justify-end pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="btn-secondary"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isLoading} className="btn-primary">
+              Create Category
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
