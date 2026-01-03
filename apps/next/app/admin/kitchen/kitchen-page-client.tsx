@@ -378,7 +378,7 @@ function OrderCard({
             <Button
               onClick={() => onUpdateStatus("cooking")}
               disabled={isUpdating}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              className="flex-1 !bg-primary-600 hover:!bg-primary-700 text-white font-medium"
             >
               {isUpdating ? "..." : "Start Cooking"}
             </Button>
@@ -387,7 +387,7 @@ function OrderCard({
             <Button
               onClick={() => onUpdateStatus("ready")}
               disabled={isUpdating}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              className="flex-1 !bg-success-600 hover:!bg-success-700 text-white font-medium"
             >
               {isUpdating ? "..." : "Mark Ready"}
             </Button>
@@ -396,7 +396,7 @@ function OrderCard({
             <Button
               onClick={() => onUpdateStatus("served")}
               disabled={isUpdating}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+              className="flex-1 !bg-neutral-600 hover:!bg-neutral-700 text-white font-medium"
             >
               {isUpdating ? "..." : "Mark Served"}
             </Button>
