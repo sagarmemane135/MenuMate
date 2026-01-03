@@ -143,7 +143,14 @@ function BillPageContent() {
       showToast("Opening payment gateway...", "info");
 
       // Initialize Razorpay
-      const razorpayKey = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m").trim();
+      // Trim and clean the key to remove any whitespace/newlines
+      const razorpayKey = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m")
+        .trim()
+        .replace(/[\r\n\t]/g, ''); // Remove all newlines, carriage returns, and tabs
+      
+      console.log("[BILL] Razorpay key length:", razorpayKey.length);
+      console.log("[BILL] Razorpay key:", razorpayKey);
+      
       const options: RazorpayCheckoutOptions = {
         key: razorpayKey,
         amount: data.data.amount,
