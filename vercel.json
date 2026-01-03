@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd apps/next && npm install && npm run build",
+  "buildCommand": "npm run build --filter=@menumate/next",
   "outputDirectory": "apps/next/.next",
   "installCommand": "npm install",
-  "framework": "nextjs",
+  "framework": null,
   "crons": [
     {
       "path": "/api/cron/cleanup-sessions",
