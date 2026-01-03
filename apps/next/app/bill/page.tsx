@@ -143,22 +143,30 @@ function BillPageContent() {
       showToast("Opening payment gateway...", "info");
 
       // Initialize Razorpay
-      const options = {
+      const options: RazorpayCheckoutOptions = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m",
         amount: data.data.amount,
         currency: data.data.currency,
         name: "MenuMate",
         description: `Table ${session.tableNumber} - Total Bill`,
         order_id: data.data.id,
-        handler: async function (response: any) {
+        handler: async function (response: RazorpayPaymentResponse) {
+          console.log("[BILL] Payment successful:", response);
           // Close session with online payment
           await closeSession("online", response.razorpay_payment_id);
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("[BILL] Payment modal dismissed by user");
+            showToast("Payment cancelled", "info");
+          },
         },
         theme: {
           color: "#f97316",
         },
       };
 
+      console.log("[BILL] Opening Razorpay with order:", data.data.id);
       const razorpay = new (window as any).Razorpay(options);
       razorpay.open();
     } catch (error) {
