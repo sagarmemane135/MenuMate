@@ -137,19 +137,19 @@ function BillPageContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create payment");
+        throw new Error(data.message || data.error || "Failed to create payment");
       }
 
       showToast("Opening payment gateway...", "info");
 
       // Initialize Razorpay
       const options = {
-        key: "rzp_test_RxnlojQNZtfZj0",
-        amount: data.order.amount,
-        currency: data.order.currency,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m",
+        amount: data.data.amount,
+        currency: data.data.currency,
         name: "MenuMate",
         description: `Table ${session.tableNumber} - Total Bill`,
-        order_id: data.order.id,
+        order_id: data.data.id,
         handler: async function (response: any) {
           // Close session with online payment
           await closeSession("online", response.razorpay_payment_id);
