@@ -143,8 +143,9 @@ function BillPageContent() {
       showToast("Opening payment gateway...", "info");
 
       // Initialize Razorpay
+      const razorpayKey = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m").trim();
       const options: RazorpayCheckoutOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_RzS6YyboMHsR4m",
+        key: razorpayKey,
         amount: data.data.amount,
         currency: data.data.currency,
         name: "MenuMate",
