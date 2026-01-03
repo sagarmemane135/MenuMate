@@ -107,7 +107,7 @@ function LoginPageContent() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
             <UtensilsCrossed className="w-10 h-10 text-primary-600" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r primary-700 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl font-bold text-primary-700 mb-3">
             {isLogin ? "Welcome Back" : "Join MenuMate"}
           </h1>
           <p className="text-slate-600 font-medium">
