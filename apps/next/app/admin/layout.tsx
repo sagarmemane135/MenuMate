@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { AdminNav } from "./nav";
+import { CounterPaymentNotificationsWrapper } from "./counter-payment-notifications-wrapper";
 
 export default async function AdminLayout({
   children,
@@ -23,6 +24,9 @@ export default async function AdminLayout({
             {children}
           </div>
         </main>
+
+        {/* Counter Payment Notifications - Persistent and visible across all admin pages */}
+        {user.role === "owner" && <CounterPaymentNotificationsWrapper />}
       </div>
     );
   } catch (error) {
