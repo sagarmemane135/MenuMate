@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt } from "lucide-react";
+import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt, AlertCircle } from "lucide-react";
 import { useCart, useToast } from "@menumate/app";
 import { Button } from "@menumate/app";
 import { usePusherChannel } from "@/lib/pusher-client";
@@ -71,6 +71,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     createdAt: string;
   }>>([]);
   const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | "paid" | null>(null);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
 
   // Validate phone number (10 digits for Indian numbers)
   const validatePhone = (phone: string): boolean => {
@@ -408,7 +409,43 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     }
   };
 
+  const handleSendToKitchenClick = () => {
+    if (items.length === 0) {
+      showToast("Please add items to your cart first", "warning");
+      return;
+    }
+
+    // Check if session is closed/paid
+    if (sessionStatus === "closed" || sessionStatus === "paid") {
+      showToast("This session has been closed. Please create a new session to place orders.", "error");
+      return;
+    }
+
+    if (!customerName.trim() || !customerPhone.trim()) {
+      console.log("[CLIENT] handleSendToKitchenClick - showing customer form");
+      setShowCustomerForm(true);
+      setShowCart(true);
+      return;
+    }
+
+    if (!validatePhone(customerPhone)) {
+      showToast("Please enter a valid 10-digit phone number", "error");
+      return;
+    }
+
+    // Show confirmation dialog
+    setShowOrderConfirmation(true);
+  };
+
   const sendToKitchen = async () => {
+    // Prevent double submission
+    if (isSendingOrder) {
+      console.log("[CLIENT] sendToKitchen - Already sending order, ignoring duplicate click");
+      return;
+    }
+
+    // Close confirmation dialog
+    setShowOrderConfirmation(false);
     if (items.length === 0) {
       showToast("Please add items to your cart first", "warning");
       return;
@@ -1029,8 +1066,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                           Cancel
                         </Button>
                         <Button
-                          onClick={sendToKitchen}
-                          disabled={isSendingOrder || !customerName.trim() || !customerPhone.trim() || !validatePhone(customerPhone) || !currentTable}
+                          onClick={handleSendToKitchenClick}
+                          disabled={isSendingOrder || !customerName.trim() || !customerPhone.trim() || !validatePhone(customerPhone) || !currentTable || sessionStatus === "closed" || sessionStatus === "paid"}
                           className="flex-1"
                         >
                           <Send className="w-4 h-4 mr-2" />
@@ -1049,7 +1086,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                           if (!customerName.trim() || !customerPhone.trim()) {
                             setShowCustomerForm(true);
                           } else {
-                            sendToKitchen();
+                            handleSendToKitchenClick();
                           }
                         }}
                         disabled={isSendingOrder || isCreatingSession || !currentTable || sessionStatus === "closed" || sessionStatus === "paid"}
@@ -1079,12 +1116,12 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                   if (!customerName.trim() || !customerPhone.trim()) {
                     setShowCustomerForm(true);
                     setShowCart(true);
-                  } else if (!currentTable) {
-                    showToast("Please enter a table number", "warning");
-                    setShowCart(true);
-                  } else {
-                    sendToKitchen();
-                  }
+                          } else if (!currentTable) {
+                            showToast("Please enter a table number", "warning");
+                            setShowCart(true);
+                          } else {
+                            handleSendToKitchenClick();
+                          }
                 }}
                 disabled={isSendingOrder || isCreatingSession || sessionStatus === "closed" || sessionStatus === "paid"}
                 className="w-full h-12 text-base font-semibold"
@@ -1096,6 +1133,53 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                   ? "Initializing..."
                   : `Send to Kitchen (₹${totalPrice.toFixed(0)})`}
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Order Confirmation Modal */}
+        {showOrderConfirmation && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Confirm Order</h3>
+              </div>
+              
+              <p className="text-slate-600 mb-4">
+                Are you sure you want to send this order to the kitchen?
+              </p>
+              
+              <div className="bg-slate-50 rounded-lg p-4 mb-6">
+                <div className="text-sm text-slate-700 mb-2">
+                  <span className="font-semibold">Table:</span> {currentTable}
+                </div>
+                <div className="text-sm text-slate-700 mb-2">
+                  <span className="font-semibold">Items:</span> {items.length}
+                </div>
+                <div className="text-sm text-slate-700">
+                  <span className="font-semibold">Total:</span> ₹{totalPrice.toFixed(0)}
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowOrderConfirmation(false)}
+                  disabled={isSendingOrder}
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={sendToKitchen}
+                  disabled={isSendingOrder}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  {isSendingOrder ? "Sending..." : "Confirm & Send"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
