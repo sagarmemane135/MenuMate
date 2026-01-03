@@ -248,8 +248,8 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
         {/* Sessions List */}
         {filteredSessions.length === 0 ? (
           <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
-            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-              <Users className="w-6 h-6 text-neutral-400" />
+            <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-neutral-400" />
             </div>
             <h3 className="text-base font-semibold text-neutral-900 mb-1">No Sessions</h3>
             <p className="text-sm text-neutral-600">
@@ -259,18 +259,85 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredSessions.map((session) => (
-              <div key={session.id} className="bg-white border border-neutral-200 rounded-card shadow-card hover:shadow-dropdown transition-shadow">
-                <div className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <h3 className="text-lg font-semibold text-neutral-900">
-                          Table {session.tableNumber}
-                        </h3>
+          <div className="bg-white border border-neutral-200 rounded-card shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="table-professional">
+                <thead>
+                  <tr>
+                    <th>Table</th>
+                    <th>Customer</th>
+                    <th>Started</th>
+                    <th>Orders</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-200">
+                  {filteredSessions.map((session) => (
+                    <tr key={session.id}>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-primary-700">{session.tableNumber}</span>
+                          </div>
+                          <span className="font-medium text-neutral-900">Table {session.tableNumber}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          {session.customerName && (
+                            <div className="font-medium text-neutral-900">{session.customerName}</div>
+                          )}
+                          {session.customerPhone && (
+                            <div className="text-xs text-neutral-500">{session.customerPhone}</div>
+                          )}
+                          {!session.customerName && !session.customerPhone && (
+                            <span className="text-sm text-neutral-500">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="text-sm text-neutral-600" suppressHydrationWarning>
+                          {formatIndianDateTime(session.startedAt)}
+                        </div>
+                        {session.closedAt && (
+                          <div className="text-xs text-neutral-500" suppressHydrationWarning>
+                            Closed: {formatIndianDateTime(session.closedAt)}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700">
+                          {session.ordersCount} {session.ordersCount === 1 ? 'order' : 'orders'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="font-semibold text-neutral-900">₹{Number(session.totalAmount).toFixed(2)}</span>
+                      </td>
+                      <td>
+                        {session.paymentMethod && session.paymentMethod !== "pending" ? (
+                          <div className="flex items-center gap-1.5">
+                            {session.paymentMethod === "online" ? (
+                              <>
+                                <CreditCard className="w-3.5 h-3.5 text-primary-600" />
+                                <span className="text-sm text-neutral-700">Online</span>
+                              </>
+                            ) : (
+                              <>
+                                <Store className="w-3.5 h-3.5 text-warning-600" />
+                                <span className="text-sm text-neutral-700">Counter</span>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-neutral-500">—</span>
+                        )}
+                      </td>
+                      <td>
                         <span
-                          className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             session.status === "active"
                               ? "bg-success-50 text-success-700"
                               : session.status === "paid"
@@ -280,59 +347,24 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                         >
                           {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
                         </span>
-                      </div>
-
-                      <div className="space-y-1.5 text-sm text-neutral-600">
-                        <p className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-neutral-400" />
-                          <span suppressHydrationWarning>
-                            {formatIndianDateTime(session.startedAt)}
-                          </span>
-                        </p>
-                        {session.closedAt && (
-                          <p className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4 text-neutral-400" />
-                            <span suppressHydrationWarning>
-                              Closed: {formatIndianDateTime(session.closedAt)}
-                            </span>
-                          </p>
-                        )}
-                        <p className="font-medium text-neutral-700">{session.ordersCount} {session.ordersCount === 1 ? 'order' : 'orders'}</p>
-                        {session.paymentMethod && session.paymentMethod !== "pending" && (
-                          <p className="flex items-center space-x-2">
-                            {session.paymentMethod === "online" ? (
-                              <CreditCard className="w-4 h-4 text-neutral-400" />
-                            ) : (
-                              <Store className="w-4 h-4 text-neutral-400" />
-                            )}
-                            <span>
-                              {session.paymentMethod === "online" ? "Paid Online" : "Pay at Counter"}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-xs text-neutral-500 mb-1">Total Amount</p>
-                      <p className="text-2xl font-semibold text-neutral-900 mb-3">
-                        ₹{Number(session.totalAmount).toFixed(2)}
-                      </p>
-                      <Button
-                        onClick={() => fetchSessionDetails(session)}
-                        disabled={isLoadingDetails}
-                        variant="outline"
-                        className="btn-secondary text-sm"
-                        size="sm"
-                      >
-                        <Eye className="w-4 h-4 mr-1.5" />
-                        {isLoadingDetails && selectedSession?.id === session.id ? "Loading..." : "View Details"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                      </td>
+                      <td>
+                        <Button
+                          onClick={() => fetchSessionDetails(session)}
+                          disabled={isLoadingDetails}
+                          variant="outline"
+                          className="btn-secondary text-sm"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-1.5" />
+                          {isLoadingDetails && selectedSession?.id === session.id ? "..." : "View"}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
