@@ -164,8 +164,6 @@ export async function POST(request: NextRequest) {
       createdAt: newOrder.createdAt instanceof Date ? newOrder.createdAt.toISOString() : newOrder.createdAt,
     };
     
-    console.log("[API] Emitting order:created event for restaurant:", session.restaurantId);
-    console.log("[API] Order data:", orderData);
     
     await emitOrderCreated(session.restaurantId, {
       order: orderData,
