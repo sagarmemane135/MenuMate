@@ -25,8 +25,13 @@ export default async function AdminLayout({
           </div>
         </main>
 
-        {/* Counter Payment Notifications - Persistent and visible across all admin pages */}
-        {user.role === "owner" && <CounterPaymentNotificationsWrapper />}
+      {/* Counter Payment Notifications - Persistent and visible across all admin pages */}
+      {user.role === "owner" && user.id && (
+        <CounterPaymentNotificationsWrapper 
+          userId={user.id as string} 
+          userRole={user.role as string} 
+        />
+      )}
       </div>
     );
   } catch (error) {
