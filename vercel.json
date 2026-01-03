@@ -1,8 +1,15 @@
 {
-  "buildCommand": "npm run build --filter=@menumate/next",
+  "buildCommand": "cd apps/next && npm install && npm run build",
   "outputDirectory": "apps/next/.next",
-  "installCommand": "npm install",
+  "installCommand": "npm install --prefix apps/next",
+  "devCommand": "cd apps/next && npm run dev",
   "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/apps/next/$1"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/cleanup-sessions",
