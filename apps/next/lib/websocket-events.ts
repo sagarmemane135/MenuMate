@@ -127,6 +127,8 @@ export async function emitCounterPaymentRequested(
     // Use Pusher for Vercel deployment
     const pusher = getPusherInstance();
     if (pusher) {
+      console.log(`[PUSHER-SERVER] 📤 Emitting payment:counter:requested to restaurant-${restaurantId}`);
+      console.log("[PUSHER-SERVER] Event data:", eventData);
 
       // Emit to restaurant room (for admin)
       await pusher.trigger(
@@ -134,9 +136,13 @@ export async function emitCounterPaymentRequested(
         "payment:counter:requested",
         eventData
       );
+      
+      console.log("[PUSHER-SERVER] ✅ Event emitted successfully");
+    } else {
+      console.error("[PUSHER-SERVER] ❌ Pusher instance not available!");
     }
   } catch (error) {
-    console.error("Failed to emit payment:counter:requested event:", error);
+    console.error("[PUSHER-SERVER] ❌ Failed to emit payment:counter:requested event:", error);
     // Don't fail the request if WebSocket emission fails
   }
 }

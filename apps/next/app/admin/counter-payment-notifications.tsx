@@ -21,11 +21,34 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
   const [pendingPayments, setPendingPayments] = useState<CounterPaymentRequest[]>([]);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   const { showToast } = useToast();
+  const [showTestButton, setShowTestButton] = useState(false);
 
   // Don't render if no restaurant ID
   if (!restaurantId) {
     return null;
   }
+
+  // Test function to manually trigger a notification
+  const testPusherConnection = async () => {
+    try {
+      console.log("[TEST] 🧪 Sending test notification...");
+      const response = await fetch("/api/test-pusher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        showToast("Test notification sent! Check console and notifications.", "info");
+      } else {
+        showToast("Test failed: " + data.error, "error");
+      }
+    } catch (error) {
+      console.error("[TEST] ❌ Error:", error);
+      showToast("Test error: " + String(error), "error");
+    }
+  };
 
   // Load pending payments from localStorage on mount
   useEffect(() => {
@@ -38,6 +61,17 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
         console.error("Failed to parse stored payments:", error);
       }
     }
+
+    // Enable test button with Ctrl+Shift+T
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "T") {
+        setShowTestButton((prev) => !prev);
+        console.log("[TEST] Test button toggled");
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [restaurantId]);
 
   // Save pending payments to localStorage whenever they change
@@ -53,18 +87,28 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
   }, [pendingPayments, restaurantId]);
 
   // Listen for new counter payment requests
+  useEffect(() => {
+    console.log("[COUNTER PAYMENT] 🔌 Subscribing to channel: restaurant-" + restaurantId);
+    console.log("[COUNTER PAYMENT] 📡 Listening for event: payment:counter:requested");
+  }, [restaurantId]);
+
   usePusherChannel(
     `restaurant-${restaurantId}`,
     "payment:counter:requested",
     (data: unknown) => {
       const eventData = data as CounterPaymentRequest;
       
-      console.log("[COUNTER PAYMENT] New request received:", eventData);
+      console.log("[COUNTER PAYMENT] 🎉 New request received:", eventData);
       
       // Add to pending list if not already present
       setPendingPayments((prev) => {
         const exists = prev.find((p) => p.sessionId === eventData.sessionId);
-        if (exists) return prev;
+        if (exists) {
+          console.log("[COUNTER PAYMENT] ⚠️ Payment request already exists, ignoring");
+          return prev;
+        }
+        
+        console.log("[COUNTER PAYMENT] ✅ Adding to pending list");
         
         // Play notification sound
         playNotificationSound();
@@ -144,12 +188,24 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
     }
   };
 
-  if (pendingPayments.length === 0) {
-    return null;
-  }
-
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm w-full space-y-2">
+      {/* Test Button - Hidden by default, show with Ctrl+Shift+T */}
+      {showTestButton && (
+        <div className="bg-primary-50 border border-primary-300 rounded-lg p-3 mb-2">
+          <p className="text-xs text-primary-700 mb-2">Pusher Test Mode</p>
+          <Button
+            onClick={testPusherConnection}
+            size="sm"
+            className="w-full"
+          >
+            🧪 Send Test Notification
+          </Button>
+        </div>
+      )}
+      
+      {pendingPayments.length === 0 && !showTestButton ? null : (
+        <>
       {pendingPayments.map((payment) => (
         <div
           key={payment.sessionId}
@@ -200,6 +256,8 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
           </Button>
         </div>
       ))}
+      </>
+      )}
     </div>
   );
 }

@@ -11,14 +11,20 @@ export function CounterPaymentNotificationsWrapper() {
     // Fetch restaurant ID for the owner
     const fetchRestaurantId = async () => {
       try {
+        console.log("[COUNTER PAYMENT WRAPPER] 🔍 Fetching restaurant ID...");
         const response = await fetch("/api/user/me");
         const data = await response.json();
         
+        console.log("[COUNTER PAYMENT WRAPPER] API response:", data);
+        
         if (data.success && data.user.restaurantId) {
+          console.log("[COUNTER PAYMENT WRAPPER] ✅ Restaurant ID found:", data.user.restaurantId);
           setRestaurantId(data.user.restaurantId);
+        } else {
+          console.warn("[COUNTER PAYMENT WRAPPER] ⚠️ No restaurant ID in response");
         }
       } catch (error) {
-        console.error("Failed to fetch restaurant ID:", error);
+        console.error("[COUNTER PAYMENT WRAPPER] ❌ Failed to fetch restaurant ID:", error);
       } finally {
         setIsLoading(false);
       }
