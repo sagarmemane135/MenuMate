@@ -186,9 +186,9 @@ export default function CheckoutWithPayment() {
   // Show loading while initializing
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br neutral-50 flex items-center justify-center">
         <div className="text-center">
-          <ShoppingCart className="w-16 h-16 text-orange-500 mx-auto mb-4 animate-pulse" />
+          <ShoppingCart className="w-16 h-16 text-primary-600 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-600">Loading checkout...</p>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function CheckoutWithPayment() {
           
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
             <p className="text-sm text-gray-600 mb-2">Order Number</p>
-            <p className="text-3xl font-bold text-orange-600">{orderNumber}</p>
+            <p className="text-3xl font-bold text-primary-700">{orderNumber}</p>
           </div>
 
           <div className="space-y-3">
@@ -227,13 +227,13 @@ export default function CheckoutWithPayment() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
+    <div className="min-h-screen bg-gradient-to-br neutral-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors"
+            className="flex items-center space-x-2 text-gray-600 hover:text-primary-700 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back to Menu</span>
@@ -245,7 +245,7 @@ export default function CheckoutWithPayment() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Title */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6">
+          <div className="bg-gradient-to-r primary-600 p-6">
             <div className="flex items-center space-x-3">
               <ShoppingCart className="w-8 h-8 text-white" />
               <h1 className="text-2xl font-bold text-white">Checkout</h1>
@@ -269,7 +269,7 @@ export default function CheckoutWithPayment() {
                 ))}
                 <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between">
                   <span className="font-bold text-gray-900">Total</span>
-                  <span className="text-xl font-bold text-orange-600">
+                  <span className="text-xl font-bold text-primary-700">
                     ₹{totalPrice.toFixed(2)}
                   </span>
                 </div>
@@ -337,7 +337,7 @@ export default function CheckoutWithPayment() {
                   }
                   placeholder="Any special requests?"
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 />
               </div>
 

@@ -37,13 +37,13 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
+      <div className="min-h-screen bg-gradient-to-br neutral-50">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br primary-600 flex items-center justify-center shadow-lg">
                   <UtensilsCrossed className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -57,7 +57,7 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
               {/* Cart Button */}
               <button
                 onClick={openCart}
-                className="relative p-3 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all"
+                className="relative p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all"
               >
                 <ShoppingCart className="w-6 h-6" />
                 {totalItems > 0 && (
@@ -99,7 +99,7 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
                     <section key={category.id}>
                       {/* Category Header */}
                       <div className="mb-6">
-                        <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-2 rounded-xl shadow-md">
+                        <div className="inline-flex items-center space-x-2 bg-gradient-to-r primary-600 text-white px-5 py-2 rounded-xl shadow-md">
                           <UtensilsCrossed className="w-5 h-5" />
                           <h2 className="text-xl font-bold">{category.name}</h2>
                         </div>
@@ -110,7 +110,7 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
                         {categoryItems.map((item) => (
                           <div
                             key={item.id}
-                            className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-orange-400 hover:shadow-xl transition-all duration-300"
+                            className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-primary-400 hover:shadow-xl transition-all duration-300"
                           >
                             {/* Item Image */}
                             {item.imageUrl ? (
@@ -139,7 +139,7 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
 
                             {/* Item Details */}
                             <div className="p-5">
-                              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
+                              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-700 transition-colors">
                                 {item.name}
                               </h3>
 
@@ -151,11 +151,11 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
 
                               <div className="flex items-center justify-between">
                                 <div className="flex items-baseline space-x-1">
-                                  <span className="text-2xl font-bold text-orange-600">
+                                  <span className="text-2xl font-bold text-primary-700">
                                     ₹{item.price.toFixed(0)}
                                   </span>
                                   {item.price % 1 !== 0 && (
-                                    <span className="text-base font-medium text-orange-500">
+                                    <span className="text-base font-medium text-primary-600">
                                       .{item.price.toFixed(2).split(".")[1]}
                                     </span>
                                   )}
@@ -192,10 +192,10 @@ export function MenuDisplayWithCart({ restaurant, categories, menuItems }: MenuD
         <footer className="bg-white border-t border-gray-200 mt-16">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
             <div className="flex items-center justify-center space-x-2 text-gray-600 mb-2">
-              <UtensilsCrossed className="w-5 h-5 text-orange-500" />
+              <UtensilsCrossed className="w-5 h-5 text-primary-600" />
               <p className="text-sm">
                 Powered by{" "}
-                <span className="font-semibold text-orange-600">MenuMate</span>
+                <span className="font-semibold text-primary-700">MenuMate</span>
               </p>
             </div>
             <p className="text-xs text-gray-500">

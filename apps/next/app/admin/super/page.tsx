@@ -109,8 +109,8 @@ export default async function SuperAdminPage() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                      <User className="w-6 h-6 text-orange-600" />
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-primary-600" />
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900">
                       {pendingUser.fullName}
@@ -127,7 +127,7 @@ export default async function SuperAdminPage() {
                       <Store className="w-4 h-4 text-slate-400" />
                       <p className="text-sm text-slate-600">
                         <span className="font-semibold">Restaurant:</span>{" "}
-                        <span className="font-bold text-orange-600">
+                        <span className="font-bold text-primary-600">
                           {pendingUser.restaurantName || "N/A"}
                         </span>
                       </p>

@@ -20,19 +20,19 @@ export function CartDrawer() {
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-orange-50">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-primary-50">
           <div className="flex items-center space-x-2">
-            <ShoppingCart className="w-6 h-6 text-orange-600" />
+            <ShoppingCart className="w-6 h-6 text-primary-700" />
             <h2 className="text-xl font-bold text-gray-900">Your Order</h2>
             {totalItems > 0 && (
-              <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              <span className="bg-primary-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 {totalItems}
               </span>
             )}
           </div>
           <button
             onClick={closeCart}
-            className="p-2 hover:bg-orange-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-primary-100 rounded-lg transition-colors"
           >
             <X className="w-6 h-6 text-gray-600" />
           </button>
@@ -64,7 +64,7 @@ export function CartDrawer() {
                     <h3 className="font-semibold text-gray-900 truncate">
                       {item.name}
                     </h3>
-                    <p className="text-orange-600 font-bold">
+                    <p className="text-primary-700 font-bold">
                       ₹{item.price.toFixed(2)}
                     </p>
 
@@ -109,7 +109,7 @@ export function CartDrawer() {
           <div className="border-t border-gray-200 p-4 bg-white">
             <div className="flex items-center justify-between mb-4">
               <span className="text-lg font-semibold text-gray-900">Total</span>
-              <span className="text-2xl font-bold text-orange-600">
+              <span className="text-2xl font-bold text-primary-700">
                 ₹{totalPrice.toFixed(2)}
               </span>
             </div>

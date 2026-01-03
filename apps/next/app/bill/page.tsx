@@ -256,9 +256,9 @@ function BillPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-spin" />
+          <Loader2 className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-spin" />
           <p className="text-gray-600">Loading your bill...</p>
         </div>
       </div>
@@ -267,7 +267,7 @@ function BillPageContent() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
         <div className="text-center">
           <Receipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">No Active Session</h2>
@@ -283,13 +283,13 @@ function BillPageContent() {
   const totalAmount = orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
+    <div className="min-h-screen bg-neutral-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors"
+            className="flex items-center space-x-2 text-neutral-600 hover:text-primary-600 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back to Menu</span>
@@ -301,17 +301,17 @@ function BillPageContent() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Title */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6">
+          <div className="bg-primary-600 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Receipt className="w-8 h-8 text-white" />
                 <div>
                   <h1 className="text-2xl font-bold text-white">Your Bill</h1>
-                  <p className="text-orange-100">Table {session.tableNumber}</p>
+                  <p className="text-primary-100">Table {session.tableNumber}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-orange-100 text-sm">Session</p>
+                <p className="text-primary-100 text-sm">Session</p>
                 <p className="text-white font-mono text-xs">{session.id.slice(0, 8)}</p>
               </div>
             </div>
@@ -373,7 +373,7 @@ function BillPageContent() {
 
                     <div className="border-t border-gray-300 mt-3 pt-2 flex justify-between">
                       <span className="text-sm font-semibold text-gray-900">Subtotal</span>
-                      <span className="text-sm font-bold text-orange-600">
+                      <span className="text-sm font-bold text-neutral-900">
                         ₹{Number(order.totalAmount).toFixed(2)}
                       </span>
                     </div>
@@ -383,10 +383,10 @@ function BillPageContent() {
             )}
 
             {/* Total */}
-            <div className="bg-orange-50 rounded-xl p-6">
+            <div className="bg-primary-50 rounded-xl p-6">
               <div className="flex justify-between items-center">
                 <span className="text-xl font-bold text-gray-900">Grand Total</span>
-                <span className="text-3xl font-bold text-orange-600">
+                <span className="text-3xl font-bold text-primary-700">
                   ₹{totalAmount.toFixed(2)}
                 </span>
               </div>
@@ -397,7 +397,7 @@ function BillPageContent() {
               <div className="space-y-3">
                 <Button
                   onClick={() => setShowPaymentSelection(true)}
-                  className="w-full h-14 text-lg bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  className="w-full h-14 text-lg bg-primary-600 hover:bg-primary-700"
                 >
                   <Receipt className="w-5 h-5 mr-2" />
                   Choose Payment Method
@@ -489,9 +489,9 @@ function BillPageContent() {
 export default function BillPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-spin" />
+          <Loader2 className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-spin" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>

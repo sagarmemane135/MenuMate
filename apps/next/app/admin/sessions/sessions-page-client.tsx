@@ -406,7 +406,7 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                   </div>
                   <div>
                     <p className="text-gray-600">Total Amount</p>
-                    <p className="font-semibold text-orange-600">₹{Number(sessionDetails.session.totalAmount).toFixed(2)}</p>
+                    <p className="font-semibold text-neutral-900">₹{Number(sessionDetails.session.totalAmount).toFixed(2)}</p>
                   </div>
                   {sessionDetails.session.customerName && (
                     <div>
@@ -501,7 +501,7 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
 
                           <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                             <span className="text-sm text-gray-600">Order Total</span>
-                            <span className="font-bold text-orange-600">
+                            <span className="font-bold text-neutral-900">
                               ₹{Number(order.totalAmount).toFixed(2)}
                             </span>
                           </div>

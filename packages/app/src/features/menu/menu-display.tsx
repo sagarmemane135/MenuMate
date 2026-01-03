@@ -29,14 +29,14 @@ export function MenuDisplay({ restaurantName, categories }: MenuDisplayProps) {
   const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-br neutral-50">
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-100 flex items-center justify-center">
-            <UtensilsCrossed className="w-12 h-12 text-orange-500" />
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary-100 flex items-center justify-center">
+            <UtensilsCrossed className="w-12 h-12 text-primary-600" />
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r primary-700 bg-clip-text text-transparent mb-4">
             {restaurantName}
           </h1>
           <p className="text-slate-600 text-lg font-medium">Explore our delicious menu</p>
@@ -72,7 +72,7 @@ export function MenuDisplay({ restaurantName, categories }: MenuDisplayProps) {
                           <p className="text-sm text-slate-600 mb-4 line-clamp-2">{item.description}</p>
                         )}
                         <div className="flex items-center justify-between">
-                          <p className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                          <p className="text-2xl font-bold bg-gradient-to-r primary-700 bg-clip-text text-transparent">
                             ₹{parseFloat(item.price).toFixed(2)}
                           </p>
                           <span className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">

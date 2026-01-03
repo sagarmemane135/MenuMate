@@ -101,13 +101,13 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br neutral-50 px-4">
       <Card className="w-full max-w-md shadow-2xl">
         <div className="mb-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
-            <UtensilsCrossed className="w-10 h-10 text-orange-500" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
+            <UtensilsCrossed className="w-10 h-10 text-primary-600" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl font-bold bg-gradient-to-r primary-700 bg-clip-text text-transparent mb-3">
             {isLogin ? "Welcome Back" : "Join MenuMate"}
           </h1>
           <p className="text-slate-600 font-medium">
@@ -243,7 +243,7 @@ function LoginPageContent() {
               setIsLogin(!isLogin);
               setError(null);
             }}
-            className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+            className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors"
           >
             {isLogin
               ? "Don't have an account? Sign up →"
@@ -258,9 +258,9 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br neutral-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-spin" />
+          <Loader2 className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-spin" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>

@@ -680,13 +680,13 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 pb-24">
+      <div className="min-h-screen bg-neutral-50 pb-24">
         {/* Compact Mobile Header */}
-        <header className="bg-white/95 backdrop-blur-sm border-b border-orange-100 shadow-sm sticky top-0 z-40">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-neutral-200 shadow-sm sticky top-0 z-40">
           <div className="px-3 py-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center shadow-md flex-shrink-0">
                   <UtensilsCrossed className="w-4 h-4 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -694,7 +694,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                     {restaurant.name}
                   </h1>
                   {currentTable ? (
-                    <p className="text-[10px] text-orange-600 font-medium">
+                    <p className="text-[10px] text-primary-600 font-medium">
                       Table {currentTable} • {sessionToken ? "Session Active" : "Connecting..."}
                     </p>
                   ) : (
@@ -709,7 +709,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                             createSession();
                           }
                         }}
-                        className="text-[10px] w-16 px-1.5 py-0.5 border border-orange-200 rounded focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                        className="text-[10px] w-16 px-1.5 py-0.5 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:outline-none"
                       />
                     </div>
                   )}
@@ -720,10 +720,10 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 {sessionToken && (
                   <a
                     href={`/bill?session=${sessionToken}`}
-                    className="relative p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+                    className="relative p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
                     title="Track Orders & View Bill"
                   >
-                    <Receipt className="w-5 h-5 text-orange-600" />
+                    <Receipt className="w-5 h-5 text-primary-600" />
                     {recentOrders.length > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                         <span className="text-[8px] text-white font-bold">{recentOrders.length}</span>
@@ -737,7 +737,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 >
                   <ShoppingCart className="w-5 h-5 text-gray-700" />
                   {items.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {items.length}
                     </span>
                   )}
@@ -749,11 +749,11 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
         {/* Order Status Banner */}
         {recentOrders.length > 0 && (
-          <div className="px-3 py-2 bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
+          <div className="px-3 py-2 bg-primary-50 border-b border-primary-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                <span className="text-xs font-semibold text-orange-900">
+                <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse" />
+                <span className="text-xs font-semibold text-primary-900">
                   {recentOrders.length} Active Order{recentOrders.length > 1 ? "s" : ""}
                 </span>
               </div>
@@ -829,11 +829,11 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                   return (
                     <section key={category.id} className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent flex-1" />
-                        <h2 className="text-lg font-bold text-gray-900 px-3 py-1 bg-white rounded-full border border-orange-200 shadow-sm">
+                        <div className="h-px bg-gradient-to-r from-transparent via-neutral-300 to-transparent flex-1" />
+                        <h2 className="text-lg font-bold text-gray-900 px-3 py-1 bg-white rounded-full border border-neutral-200 shadow-sm">
                           {category.name}
                         </h2>
-                        <div className="h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent flex-1" />
+                        <div className="h-px bg-gradient-to-r from-transparent via-neutral-300 to-transparent flex-1" />
                       </div>
 
                       <div className="space-y-3">
@@ -884,26 +884,26 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                                   </div>
 
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-base font-bold text-orange-600">
+                                    <span className="text-base font-bold text-primary-700">
                                       ₹{item.price.toFixed(0)}
                                     </span>
 
                                     {quantity > 0 ? (
-                                      <div className="flex items-center gap-2 bg-orange-50 rounded-lg px-2 py-1">
+                                      <div className="flex items-center gap-2 bg-primary-50 rounded-lg px-2 py-1">
                                         <button
                                           onClick={() => updateQuantity(item.id, quantity - 1)}
-                                          className="w-6 h-6 rounded-full bg-white border border-orange-200 flex items-center justify-center active:scale-90 transition-transform"
+                                          className="w-6 h-6 rounded-full bg-white border border-primary-200 flex items-center justify-center active:scale-90 transition-transform"
                                         >
-                                          <Minus className="w-3 h-3 text-orange-600" />
+                                          <Minus className="w-3 h-3 text-primary-600" />
                                         </button>
-                                        <span className="text-sm font-bold text-orange-600 w-6 text-center">
+                                        <span className="text-sm font-bold text-primary-700 w-6 text-center">
                                           {quantity}
                                         </span>
                                         <button
                                           onClick={() => updateQuantity(item.id, quantity + 1)}
-                                          className="w-6 h-6 rounded-full bg-white border border-orange-200 flex items-center justify-center active:scale-90 transition-transform"
+                                          className="w-6 h-6 rounded-full bg-white border border-primary-200 flex items-center justify-center active:scale-90 transition-transform"
                                         >
-                                          <Plus className="w-3 h-3 text-orange-600" />
+                                          <Plus className="w-3 h-3 text-primary-600" />
                                         </button>
                                       </div>
                                     ) : (
@@ -1014,7 +1014,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                         placeholder="Enter table number"
                         value={inputTableNumber}
                         onChange={(e) => setInputTableNumber(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
                       />
                     </div>
                   )}
@@ -1030,7 +1030,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                           placeholder="Enter your name"
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
                           required
                         />
                       </div>
@@ -1044,7 +1044,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                           value={customerPhone}
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           maxLength={10}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none ${
                             phoneError ? "border-red-300" : "border-gray-300"
                           }`}
                           required
@@ -1079,7 +1079,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                     <>
                       <div className="flex items-center justify-between text-lg font-bold">
                         <span>Total:</span>
-                        <span className="text-orange-600">₹{totalPrice.toFixed(0)}</span>
+                        <span className="text-primary-700">₹{totalPrice.toFixed(0)}</span>
                       </div>
                       <Button
                         onClick={() => {
@@ -1109,7 +1109,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
 
         {/* Fixed Bottom Button - Mobile Only */}
         {items.length > 0 && !showCart && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-orange-500 shadow-2xl z-40 safe-area-inset-bottom">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-primary-600 shadow-2xl z-40 safe-area-inset-bottom">
             <div className="px-4 py-3">
               <Button
                 onClick={() => {
@@ -1142,8 +1142,8 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-primary-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">Confirm Order</h3>
               </div>
@@ -1175,7 +1175,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 <Button
                   onClick={sendToKitchen}
                   disabled={isSendingOrder}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  className="flex-1 bg-primary-600 hover:bg-primary-700"
                 >
                   {isSendingOrder ? "Sending..." : "Confirm & Send"}
                 </Button>
