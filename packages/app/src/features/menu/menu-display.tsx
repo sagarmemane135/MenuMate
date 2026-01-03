@@ -47,9 +47,9 @@ export function MenuDisplay({ restaurantName, categories }: MenuDisplayProps) {
           {sortedCategories.map((category) => (
             <div key={category.id}>
               <div className="flex items-center mb-8">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent"></div>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-neutral-300 to-transparent"></div>
                 <h2 className="px-6 text-3xl font-bold text-slate-900">{category.name}</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent"></div>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-neutral-300 to-transparent"></div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -733,7 +733,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
                 )}
                 <button
                   onClick={() => setShowCart(true)}
-                  className="relative p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+                  className="relative p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
                 >
                   <ShoppingCart className="w-5 h-5 text-gray-700" />
                   {items.length > 0 && (
@@ -760,7 +760,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
               {sessionToken && (
                 <a
                   href={`/bill?session=${sessionToken}`}
-                  className="text-xs font-semibold text-orange-600 hover:text-orange-700"
+                  className="text-xs font-semibold text-primary-600 hover:text-primary-700"
                 >
                   View All →
                 </a>
