@@ -5,6 +5,23 @@
 
 import Pusher from "pusher";
 
+/**
+ * Get a Pusher instance with trimmed credentials
+ * This ensures no whitespace issues with environment variables
+ */
+function getPusherInstance(): Pusher | null {
+  if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+    return new Pusher({
+      appId: process.env.PUSHER_APP_ID.trim(),
+      key: process.env.PUSHER_KEY.trim(),
+      secret: process.env.PUSHER_SECRET.trim(),
+      cluster: (process.env.PUSHER_CLUSTER || "ap2").trim(),
+      useTLS: true,
+    });
+  }
+  return null;
+}
+
 interface OrderCreatedEvent {
   order: {
     id: string;
@@ -42,14 +59,8 @@ export async function emitOrderCreated(
 ) {
   try {
     // Use Pusher for Vercel deployment
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
+    const pusher = getPusherInstance();
+    if (pusher) {
 
       console.log("[WS] Triggering order:created on channel:", `restaurant-${restaurantId}`);
       console.log("[WS] Event data:", JSON.stringify(eventData, null, 2));
@@ -78,14 +89,8 @@ export async function emitOrderStatusUpdated(
 ) {
   try {
     // Use Pusher for Vercel deployment
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
+    const pusher = getPusherInstance();
+    if (pusher) {
 
       // Emit to restaurant room (for kitchen staff)
       await pusher.trigger(
@@ -125,14 +130,8 @@ export async function emitCounterPaymentRequested(
 ) {
   try {
     // Use Pusher for Vercel deployment
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
+    const pusher = getPusherInstance();
+    if (pusher) {
 
       // Emit to restaurant room (for admin)
       await pusher.trigger(
@@ -162,14 +161,8 @@ export async function emitCounterPaymentReceived(
 ) {
   try {
     // Use Pusher for Vercel deployment
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
+    const pusher = getPusherInstance();
+    if (pusher) {
 
       // Emit to restaurant room (for admin confirmation)
       await pusher.trigger(
@@ -206,14 +199,8 @@ export async function emitSessionUpdated(
 ) {
   try {
     // Use Pusher for Vercel deployment
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
+    const pusher = getPusherInstance();
+    if (pusher) {
 
       // Emit to restaurant room (for admin/sessions page)
       console.log("[WS] Triggering session:updated on channel:", `restaurant-${restaurantId}`);
