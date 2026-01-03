@@ -23,8 +23,17 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
   const { showToast } = useToast();
   const [showTestButton, setShowTestButton] = useState(false);
 
+  // Log component mount
+  useEffect(() => {
+    console.log("[COUNTER PAYMENT] 🎬 Component mounted with restaurant ID:", restaurantId);
+    return () => {
+      console.log("[COUNTER PAYMENT] 🔚 Component unmounted");
+    };
+  }, []);
+
   // Don't render if no restaurant ID
   if (!restaurantId) {
+    console.warn("[COUNTER PAYMENT] ⚠️ No restaurant ID, not rendering");
     return null;
   }
 
@@ -189,12 +198,17 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm w-full space-y-2">
-      {/* Test Button - Hidden by default, show with Ctrl+Alt+P */}
-      {showTestButton && (
+    <>
+      {/* Always visible debug indicator - Remove after testing */}
+      <div className="fixed bottom-4 left-4 z-[60] bg-green-500 text-white px-3 py-1 rounded-full text-xs font-mono shadow-lg">
+        ✓ Notifications Active
+      </div>
+
+      <div className="fixed top-4 right-4 z-50 max-w-sm w-full space-y-2">
+        {/* Test Button - Toggle with Ctrl+Alt+P OR always show for debugging */}
         <div className="bg-primary-50 border border-primary-300 rounded-lg p-3 mb-2">
           <p className="text-xs text-primary-700 mb-2">
-            Pusher Test Mode <span className="text-primary-500">(Ctrl+Alt+P to hide)</span>
+            Pusher Test Mode <span className="text-primary-500">(Press Ctrl+Alt+P to toggle)</span>
           </p>
           <Button
             onClick={testPusherConnection}
@@ -203,11 +217,13 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
           >
             🧪 Send Test Notification
           </Button>
+          <p className="text-xs text-neutral-500 mt-2">
+            Restaurant ID: {restaurantId.substring(0, 8)}...
+          </p>
         </div>
-      )}
       
-      {pendingPayments.length === 0 && !showTestButton ? null : (
-        <>
+        {pendingPayments.length === 0 ? null : (
+          <>
       {pendingPayments.map((payment) => (
         <div
           key={payment.sessionId}
@@ -258,9 +274,10 @@ export function CounterPaymentNotifications({ restaurantId }: CounterPaymentNoti
           </Button>
         </div>
       ))}
-      </>
-      )}
-    </div>
+        </>
+        )}
+      </div>
+    </>
   );
 }
 
