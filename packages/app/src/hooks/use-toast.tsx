@@ -66,7 +66,7 @@ function ToastContainer({
   removeToast: (id: string) => void;
 }) {
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full">
+    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 z-50 flex flex-col gap-2 max-w-md mx-auto md:mx-0 md:w-full">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
@@ -82,10 +82,10 @@ function ToastItem({
   onRemove: (id: string) => void;
 }) {
   const bgColors = {
-    success: "bg-green-500",
-    error: "bg-red-500",
-    info: "bg-blue-500",
-    warning: "bg-yellow-500",
+    success: "bg-success-600",
+    error: "bg-error-600",
+    info: "bg-primary-600",
+    warning: "bg-warning-600",
   };
 
   const textColors = {
@@ -97,17 +97,17 @@ function ToastItem({
 
   return (
     <div
-      className={`${bgColors[toast.type]} ${textColors[toast.type]} px-4 py-3 rounded-lg shadow-lg flex items-center justify-between animate-in slide-in-from-right-5`}
+      className={`${bgColors[toast.type]} ${textColors[toast.type]} px-4 py-3 rounded-lg shadow-xl flex items-center justify-between animate-in slide-in-from-top-2 border border-white/20 backdrop-blur-sm`}
       role="alert"
     >
-      <p className="text-sm font-medium">{toast.message}</p>
+      <p className="text-sm font-medium flex-1 pr-2 break-words">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
-        className="ml-4 text-white hover:text-gray-200 focus:outline-none"
+        className="ml-2 text-white/90 hover:text-white focus:outline-none flex-shrink-0"
         aria-label="Close notification"
       >
         <svg
-          className="w-4 h-4"
+          className="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
