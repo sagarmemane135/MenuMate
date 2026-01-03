@@ -66,7 +66,7 @@ function ToastContainer({
   removeToast: (id: string) => void;
 }) {
   return (
-    <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 z-50 flex flex-col gap-2 max-w-md mx-auto md:mx-0 md:w-full">
+    <div className="fixed bottom-4 left-4 right-4 md:top-4 md:bottom-auto md:left-auto md:right-4 z-50 flex flex-col gap-2 max-w-md mx-auto md:mx-0 md:w-full">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
@@ -97,7 +97,7 @@ function ToastItem({
 
   return (
     <div
-      className={`${bgColors[toast.type]} ${textColors[toast.type]} px-4 py-3 rounded-lg shadow-xl flex items-center justify-between animate-in slide-in-from-top-2 border border-white/20 backdrop-blur-sm`}
+      className={`${bgColors[toast.type]} ${textColors[toast.type]} px-4 py-3 rounded-lg shadow-xl flex items-center justify-between animate-in slide-in-from-bottom-2 md:slide-in-from-top-2 border border-white/20 backdrop-blur-sm`}
       role="alert"
     >
       <p className="text-sm font-medium flex-1 pr-2 break-words">{toast.message}</p>
