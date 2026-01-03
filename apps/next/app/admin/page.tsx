@@ -145,168 +145,176 @@ export default async function AdminDashboard() {
     }
 
     return (
-      <div className="px-4 py-6 sm:px-0">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+      <div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-neutral-900">
             {user.role === "super_admin" ? "Platform Admin" : "Dashboard"}
           </h1>
-          <p className="mt-2 sm:mt-3 text-base sm:text-lg text-slate-600">
+          <p className="mt-1 text-sm text-neutral-600">
             {user.role === "super_admin" 
               ? "Manage restaurants and admins" 
-              : `Welcome back!`}
+              : `Monitor your restaurant performance`}
           </p>
         </div>
 
         {user.role === "super_admin" ? (
         <div className="space-y-6">
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <Card className="bg-gradient-to-br from-orange-50 to-white border-orange-100">
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-600">Restaurant Admins</p>
-                  <Users className="w-8 h-8 text-orange-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="stat-label">Restaurant Admins</p>
+                  <p className="stat-value">{stats?.totalRestaurantAdmins || 0}</p>
+                  <p className="stat-change">Total registered</p>
                 </div>
-                <p className="text-4xl font-bold text-slate-900 mt-3">
-                  {stats?.totalRestaurantAdmins || 0}
-                </p>
-                <p className="text-xs text-slate-500 mt-2 font-medium">Total registered</p>
-              </div>
-            </Card>
-            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-600">Approved Admins</p>
-                  <CheckCircle className="w-8 h-8 text-green-500" />
+                <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-neutral-600" />
                 </div>
-                <p className="text-4xl font-bold text-green-600 mt-3">
-                  {stats?.approvedRestaurantAdmins || 0}
-                </p>
-                <p className="text-xs text-slate-500 mt-2 font-medium">Active restaurant admins</p>
               </div>
-            </Card>
-            <Card className="bg-gradient-to-br from-yellow-50 to-white border-yellow-100">
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-600">Pending Approvals</p>
-                  <Clock className="w-8 h-8 text-yellow-500" />
+            </div>
+            
+            <div className="stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="stat-label">Approved Admins</p>
+                  <p className="stat-value text-success-600">{stats?.approvedRestaurantAdmins || 0}</p>
+                  <p className="stat-change">Active restaurant admins</p>
                 </div>
-                <p className="text-4xl font-bold text-yellow-600 mt-3">
-                  {stats?.pendingRestaurantAdmins || 0}
-                </p>
-                <p className="text-xs text-slate-500 mt-2 font-medium">Awaiting review</p>
-              </div>
-            </Card>
-            <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-600">Total Restaurants</p>
-                  <UtensilsCrossed className="w-8 h-8 text-blue-500" />
+                <div className="w-12 h-12 rounded-lg bg-success-50 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-success-600" />
                 </div>
-                <p className="text-4xl font-bold text-blue-600 mt-3">
-                  {stats?.totalRestaurants || 0}
-                </p>
-                <p className="text-xs text-slate-500 mt-2 font-medium">
-                  {stats?.activeRestaurants || 0} active
-                </p>
               </div>
-            </Card>
+            </div>
+            
+            <div className="stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="stat-label">Pending Approvals</p>
+                  <p className="stat-value text-warning-600">{stats?.pendingRestaurantAdmins || 0}</p>
+                  <p className="stat-change">Awaiting review</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-warning-50 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-warning-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="stat-label">Total Restaurants</p>
+                  <p className="stat-value text-primary-600">{stats?.totalRestaurants || 0}</p>
+                  <p className="stat-change">{stats?.activeRestaurants || 0} active</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
+                  <UtensilsCrossed className="w-6 h-6 text-primary-600" />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Actions */}
-          <Card title="Quick Actions">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a
-                href="/admin/super"
-                className="block p-5 border-2 border-orange-200 rounded-xl hover:border-orange-400 bg-gradient-to-br from-orange-50 to-white hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-start space-x-3">
-                  <ClipboardList className="w-10 h-10 text-orange-500 flex-shrink-0" />
+          <div className="bg-white border border-neutral-200 rounded-card shadow-card">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h2 className="text-base font-semibold text-neutral-900">Quick Actions</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a
+                  href="/admin/super"
+                  className="flex items-start space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <ClipboardList className="w-5 h-5 text-primary-600" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-1.5">
-                      Review Restaurant Admin Requests
+                    <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                      Review Admin Requests
                     </h3>
-                    <p className="text-sm text-slate-600">
-                      Approve or reject pending restaurant admin registrations
+                    <p className="text-xs text-neutral-600">
+                      Approve or reject pending registrations
                     </p>
                   </div>
-                </div>
-              </a>
-              <div className="p-5 border-2 border-slate-200 rounded-xl bg-gradient-to-br from-slate-50 to-white">
-                <div className="flex items-start space-x-3">
-                  <BarChart3 className="w-10 h-10 text-slate-500 flex-shrink-0" />
+                </a>
+                <div className="flex items-start space-x-3 p-4 border border-neutral-200 rounded-lg bg-neutral-50">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-neutral-200 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-neutral-600" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-1.5">
+                    <h3 className="text-sm font-semibold text-neutral-900 mb-1">
                       Platform Overview
                     </h3>
-                    <p className="text-sm text-slate-600">
-                      {stats?.activeRestaurants || 0} active restaurants out of{" "}
+                    <p className="text-xs text-neutral-600">
+                      {stats?.activeRestaurants || 0} active of{" "}
                       {stats?.totalRestaurants || 0} total
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Restaurants List */}
-          <Card title="All Restaurants">
+          <div className="bg-white border border-neutral-200 rounded-card shadow-card">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h2 className="text-base font-semibold text-neutral-900">All Restaurants</h2>
+            </div>
             {allRestaurants.length === 0 ? (
               <div className="text-center py-12">
-                <UtensilsCrossed className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600 font-medium">
+                <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+                  <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
+                </div>
+                <p className="text-sm text-neutral-600">
                   No restaurants registered yet
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
+              <div className="overflow-x-auto">
+                <table className="table-professional">
+                  <thead>
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        Restaurant Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        Slug
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th>Restaurant Name</th>
+                      <th>Slug</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-100">
+                  <tbody className="bg-white divide-y divide-neutral-200">
                     {allRestaurants.map((restaurant) => (
-                      <tr key={restaurant.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-slate-900">
-                            {restaurant.name}
+                      <tr key={restaurant.id}>
+                        <td>
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center mr-3">
+                              <UtensilsCrossed className="w-4 h-4 text-primary-600" />
+                            </div>
+                            <div className="font-medium text-neutral-900">
+                              {restaurant.name}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-600 font-mono">
+                        <td>
+                          <span className="text-sm text-neutral-600 font-mono">
                             {restaurant.slug}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${
-                              restaurant.isActive
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {restaurant.isActive ? "● Active" : "● Inactive"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
+                        <td>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              restaurant.isActive
+                                ? "bg-success-50 text-success-700"
+                                : "bg-neutral-100 text-neutral-700"
+                            }`}
+                          >
+                            {restaurant.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td>
                           <a
                             href={`/r/${restaurant.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-orange-600 hover:text-orange-700 transition-colors"
+                            className="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
                           >
                             View Menu →
                           </a>
@@ -317,7 +325,7 @@ export default async function AdminDashboard() {
                 </table>
               </div>
             )}
-          </Card>
+          </div>
         </div>
       ) : (
         <DashboardClient 
@@ -332,10 +340,10 @@ export default async function AdminDashboard() {
   } catch (error) {
     console.error("AdminDashboard error:", error);
     return (
-      <div className="px-4 py-6 sm:px-0">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Error Loading Dashboard</h2>
-          <p className="text-red-600">
+      <div>
+        <div className="bg-error-50 border border-error-200 rounded-card p-6">
+          <h2 className="text-lg font-semibold text-error-900 mb-2">Error Loading Dashboard</h2>
+          <p className="text-sm text-error-600">
             An error occurred while loading the dashboard. Please try refreshing the page.
           </p>
         </div>

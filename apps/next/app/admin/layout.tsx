@@ -15,11 +15,13 @@ export default async function AdminLayout({
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-50">
+      <div className="min-h-screen bg-neutral-50">
         <AdminNav userRole={user.role} userEmail={user.email} />
 
-        <main className="max-w-7xl mx-auto py-4 px-4 sm:py-8 sm:px-6 lg:px-8">
-          {children}
+        <main className="lg:pl-64">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            {children}
+          </div>
         </main>
       </div>
     );
