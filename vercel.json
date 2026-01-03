@@ -1,4 +1,8 @@
 {
+  "buildCommand": "cd apps/next && npm install && npm run build",
+  "outputDirectory": "apps/next/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "crons": [
     {
       "path": "/api/cron/cleanup-sessions",
