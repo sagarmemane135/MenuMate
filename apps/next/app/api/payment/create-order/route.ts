@@ -21,8 +21,19 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Razorpay credentials are configured
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error("[PAYMENT] Razorpay credentials not configured");
+      return errorResponse(
+        "Payment gateway not configured. Please contact support.",
+        500
+      );
+    }
+
     const body = await request.json();
     const validatedData = createOrderSchema.parse(body);
+
+    console.log("[PAYMENT] Creating Razorpay order for amount:", validatedData.amount);
 
     // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({
@@ -31,6 +42,8 @@ export async function POST(request: NextRequest) {
       receipt: validatedData.receipt,
       notes: validatedData.notes,
     });
+
+    console.log("[PAYMENT] Razorpay order created:", razorpayOrder.id);
 
     return successResponse({
       id: razorpayOrder.id,
@@ -43,7 +56,11 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse(error.errors);
     }
 
-    console.error("Razorpay order creation error:", error);
+    console.error("[PAYMENT] Razorpay order creation error:", error);
+    if (error instanceof Error) {
+      console.error("[PAYMENT] Error message:", error.message);
+      console.error("[PAYMENT] Error stack:", error.stack);
+    }
     return internalErrorResponse("Failed to create payment order");
   }
 }
