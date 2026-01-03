@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { razorpay } from "@/lib/razorpay";
+import { getRazorpayInstance } from "@/lib/razorpay";
 import { z } from "zod";
 import {
   successResponse,
@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
 
     console.log("[PAYMENT] Creating Razorpay order for amount:", validatedData.amount);
 
+    // Get a fresh Razorpay instance with current credentials
+    const razorpay = getRazorpayInstance();
+    
     // Create Razorpay order
     const razorpayOrder = await razorpay.orders.create({
       amount: validatedData.amount * 100, // Convert to paise

@@ -1,18 +1,30 @@
 import Razorpay from "razorpay";
 
-// Initialize Razorpay instance
-// Check if credentials are available, otherwise create a dummy instance
-const keyId = process.env.RAZORPAY_KEY_ID || "dummy_key_id";
-const keySecret = process.env.RAZORPAY_KEY_SECRET || "dummy_key_secret";
+// Get Razorpay instance - creates a fresh instance with current env vars
+// This ensures we always use the latest credentials, not cached ones
+export function getRazorpayInstance(): Razorpay {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  console.warn("[RAZORPAY] Credentials not configured. Payment gateway will not work.");
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay credentials not configured");
+  }
+
+  return new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
 }
 
-export const razorpay = new Razorpay({
-  key_id: keyId,
-  key_secret: keySecret,
-});
+// Legacy export for backward compatibility - but prefer using getRazorpayInstance()
+export const razorpay = {
+  get orders() {
+    return getRazorpayInstance().orders;
+  },
+  get payments() {
+    return getRazorpayInstance().payments;
+  },
+};
 
 // Verify Razorpay payment signature
 export function verifyPaymentSignature(
