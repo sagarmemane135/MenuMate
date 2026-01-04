@@ -117,58 +117,70 @@ export function AnalyticsPageClient({
       </div>
 
       {/* View Tabs */}
-      <div className="flex gap-2 border-b border-neutral-200">
+      <div className="flex gap-1 border-b-2 border-neutral-200 bg-white">
         <button
           onClick={() => setView("daily")}
-          className={`px-4 py-2 font-medium transition-colors ${
+          className={`px-6 py-3 font-semibold transition-all relative ${
             view === "daily"
-              ? "text-primary-600 border-b-2 border-primary-600"
-              : "text-neutral-600 hover:text-neutral-900"
+              ? "text-primary-600 bg-primary-50"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
           }`}
         >
           <div className="flex items-center gap-2">
             <LineChart className="h-4 w-4" />
             Daily
           </div>
+          {view === "daily" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>
+          )}
         </button>
         <button
           onClick={() => setView("monthly")}
-          className={`px-4 py-2 font-medium transition-colors ${
+          className={`px-6 py-3 font-semibold transition-all relative ${
             view === "monthly"
-              ? "text-primary-600 border-b-2 border-primary-600"
-              : "text-neutral-600 hover:text-neutral-900"
+              ? "text-primary-600 bg-primary-50"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
           }`}
         >
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Monthly
           </div>
+          {view === "monthly" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>
+          )}
         </button>
         <button
           onClick={() => setView("items")}
-          className={`px-4 py-2 font-medium transition-colors ${
+          className={`px-6 py-3 font-semibold transition-all relative ${
             view === "items"
-              ? "text-primary-600 border-b-2 border-primary-600"
-              : "text-neutral-600 hover:text-neutral-900"
+              ? "text-primary-600 bg-primary-50"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
           }`}
         >
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4" />
             Items
           </div>
+          {view === "items" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>
+          )}
         </button>
         <button
           onClick={() => setView("categories")}
-          className={`px-4 py-2 font-medium transition-colors ${
+          className={`px-6 py-3 font-semibold transition-all relative ${
             view === "categories"
-              ? "text-primary-600 border-b-2 border-primary-600"
-              : "text-neutral-600 hover:text-neutral-900"
+              ? "text-primary-600 bg-primary-50"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
           }`}
         >
           <div className="flex items-center gap-2">
             <PieChart className="h-4 w-4" />
             Categories
           </div>
+          {view === "categories" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>
+          )}
         </button>
       </div>
 
