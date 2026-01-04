@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Button, useToast } from "@menumate/app";
-import { usePusherChannel } from "@/lib/pusher-client";
+import { useRealtime } from "@/lib/use-realtime";
 import { Bell, Clock, CheckCircle, ChefHat } from "lucide-react";
 import { getTimeAgo } from "@/lib/date-utils";
 
@@ -50,15 +50,14 @@ export function KitchenPageClient({
     console.log("[KDS] Listening on channel:", `restaurant-${restaurantId}`);
   }, []);
 
-  // Listen for new orders
-  usePusherChannel(
-    `restaurant-${restaurantId}`,
-    "order:created",
-    (data: unknown) => {
+  // Listen for new orders - Pusher or polling
+  useRealtime({
+    channelName: `restaurant-${restaurantId}`,
+    eventName: "order:created",
+    callback: (data: unknown) => {
       console.log("[KDS] Received order:created event:", data);
       const eventData = data as { order: Order; session: { id: string; tableNumber: string } };
       
-      // Ensure order data matches Order interface
       const newOrder: Order = {
         id: eventData.order.id,
         items: eventData.order.items,
@@ -70,27 +69,25 @@ export function KitchenPageClient({
         createdAt: eventData.order.createdAt,
       };
       
-      console.log("[KDS] Adding new order to state:", newOrder);
       setOrders((prev) => {
-        // Check if order already exists to prevent duplicates
         const exists = prev.find((o) => o.id === newOrder.id);
         if (exists) {
-          console.log("[KDS] Order already exists, skipping:", newOrder.id);
           return prev;
         }
-        console.log("[KDS] Adding order, new count:", prev.length + 1);
         return [newOrder, ...prev];
       });
       playNotificationSound();
       showToast(`New order from Table ${eventData.session.tableNumber}!`, "info");
-    }
-  );
+    },
+    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}`,
+    pollingInterval: 3000, // More frequent for kitchen
+  });
 
-  // Listen for status updates
-  usePusherChannel(
-    `restaurant-${restaurantId}`,
-    "order:status:updated",
-    (data: unknown) => {
+  // Listen for status updates - Pusher or polling
+  useRealtime({
+    channelName: `restaurant-${restaurantId}`,
+    eventName: "order:status:updated",
+    callback: (data: unknown) => {
       const eventData = data as { orderId: string; status: string };
       setOrders((prev) =>
         prev.map((order) =>
@@ -99,8 +96,10 @@ export function KitchenPageClient({
             : order
         )
       );
-    }
-  );
+    },
+    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}`,
+    pollingInterval: 3000,
+  });
 
   const playNotificationSound = () => {
     // Try to play notification sound

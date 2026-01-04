@@ -1,16 +1,20 @@
 /**
  * WebSocket event emitter utility
- * Supports both Pusher (for Vercel) and Socket.io (for self-hosted)
+ * Silently uses Pusher if configured, otherwise events are skipped (client uses polling fallback)
  */
 
 import Pusher from "pusher";
 
 /**
- * Get a Pusher instance with trimmed credentials
- * This ensures no whitespace issues with environment variables
+ * Get Pusher instance with trimmed credentials
+ * Returns null if Pusher is not configured (polling fallback will be used on client)
  */
 function getPusherInstance(): Pusher | null {
-  if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
+  if (
+    process.env.PUSHER_APP_ID &&
+    process.env.PUSHER_KEY &&
+    process.env.PUSHER_SECRET
+  ) {
     return new Pusher({
       appId: process.env.PUSHER_APP_ID.trim(),
       key: process.env.PUSHER_KEY.trim(),
@@ -19,6 +23,8 @@ function getPusherInstance(): Pusher | null {
       useTLS: true,
     });
   }
+
+  // Silently return null - client will use polling fallback
   return null;
 }
 
@@ -51,67 +57,52 @@ interface OrderStatusUpdatedEvent {
 }
 
 /**
- * Emit order created event to restaurant room
+ * Emit an order:created event
  */
-export async function emitOrderCreated(
-  restaurantId: string,
-  eventData: OrderCreatedEvent
-) {
-  try {
-    // Use Pusher for Vercel deployment
-    const pusher = getPusherInstance();
-    if (pusher) {
+export async function emitOrderCreated(restaurantId: string, eventData: OrderCreatedEvent) {
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
 
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "order:created",
-        eventData
-      );
-    }
+  try {
+    await pusher.trigger(`restaurant-${restaurantId}`, "order:created", eventData);
+    console.log(`[PUSHER] ✅ Emitted order:created to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("Failed to emit order:created event:", error);
-    // Don't fail the request if WebSocket emission fails
+    console.error("[PUSHER] ❌ Failed to emit order:created:", error);
   }
 }
 
 /**
- * Emit order status updated event
+ * Emit an order:status:updated event
  */
 export async function emitOrderStatusUpdated(
   restaurantId: string,
   sessionToken: string | null,
   eventData: OrderStatusUpdatedEvent
 ) {
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
+
   try {
-    // Use Pusher for Vercel deployment
-    const pusher = getPusherInstance();
-    if (pusher) {
+    // Emit to restaurant room (for kitchen staff)
+    await pusher.trigger(`restaurant-${restaurantId}`, "order:status:updated", eventData);
 
-      // Emit to restaurant room (for kitchen staff)
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "order:status:updated",
-        eventData
-      );
-
-      // Emit to session room (for customer) if session token exists
-      if (sessionToken) {
-        const sessionChannel = `session-${sessionToken}`;
-        await pusher.trigger(
-          sessionChannel,
-          "order:status:updated",
-          eventData
-        );
-      }
+    // Emit to session room (for customer) if session token exists
+    if (sessionToken) {
+      await pusher.trigger(`session-${sessionToken}`, "order:status:updated", eventData);
     }
+    
+    console.log(`[PUSHER] ✅ Emitted order:status:updated to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("Failed to emit order:status:updated event:", error);
-    // Don't fail the request if WebSocket emission fails
+    console.error("[PUSHER] ❌ Failed to emit order:status:updated:", error);
   }
 }
 
 /**
- * Emit counter payment requested event to restaurant room (for admin)
+ * Emit a payment:counter:requested event
  */
 export async function emitCounterPaymentRequested(
   restaurantId: string,
@@ -123,32 +114,25 @@ export async function emitCounterPaymentRequested(
     requestedAt: string;
   }
 ) {
-  try {
-    // Use Pusher for Vercel deployment
-    const pusher = getPusherInstance();
-    if (pusher) {
-      console.log(`[PUSHER-SERVER] 📤 Emitting payment:counter:requested to restaurant-${restaurantId}`);
-      console.log("[PUSHER-SERVER] Event data:", eventData);
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
 
-      // Emit to restaurant room (for admin)
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "payment:counter:requested",
-        eventData
-      );
-      
-      console.log("[PUSHER-SERVER] ✅ Event emitted successfully");
-    } else {
-      console.error("[PUSHER-SERVER] ❌ Pusher instance not available!");
-    }
+  try {
+    await pusher.trigger(
+      `restaurant-${restaurantId}`,
+      "payment:counter:requested",
+      eventData
+    );
+    console.log(`[PUSHER] ✅ Emitted payment:counter:requested to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("[PUSHER-SERVER] ❌ Failed to emit payment:counter:requested event:", error);
-    // Don't fail the request if WebSocket emission fails
+    console.error("[PUSHER] ❌ Failed to emit payment:counter:requested:", error);
   }
 }
 
 /**
- * Emit counter payment received event (when admin marks as paid)
+ * Emit a payment:counter:received event
  */
 export async function emitCounterPaymentReceived(
   restaurantId: string,
@@ -160,33 +144,34 @@ export async function emitCounterPaymentReceived(
     paidAt: string;
   }
 ) {
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
+
   try {
-    // Use Pusher for Vercel deployment
-    const pusher = getPusherInstance();
-    if (pusher) {
+    // Emit to restaurant room (for admin confirmation)
+    await pusher.trigger(
+      `restaurant-${restaurantId}`,
+      "payment:counter:received",
+      eventData
+    );
 
-      // Emit to restaurant room (for admin confirmation)
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "payment:counter:received",
-        eventData
-      );
-
-      // Emit to session room (for customer notification)
-      await pusher.trigger(
-        `session-${sessionToken}`,
-        "payment:counter:received",
-        eventData
-      );
-    }
+    // Emit to session room (for customer notification)
+    await pusher.trigger(
+      `session-${sessionToken}`,
+      "payment:counter:received",
+      eventData
+    );
+    
+    console.log(`[PUSHER] ✅ Emitted payment:counter:received to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("Failed to emit payment:counter:received event:", error);
-    // Don't fail the request if WebSocket emission fails
+    console.error("[PUSHER] ❌ Failed to emit payment:counter:received:", error);
   }
 }
 
 /**
- * Emit session updated event (when session total or orders change)
+ * Emit a session:updated event
  */
 export async function emitSessionUpdated(
   restaurantId: string,
@@ -198,32 +183,26 @@ export async function emitSessionUpdated(
     ordersCount: number;
   }
 ) {
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
+
   try {
-    // Use Pusher for Vercel deployment
-    const pusher = getPusherInstance();
-    if (pusher) {
+    // Emit to restaurant room (for admin/sessions page)
+    await pusher.trigger(`restaurant-${restaurantId}`, "session:updated", eventData);
 
-      // Emit to restaurant room (for admin/sessions page)
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "session:updated",
-        eventData
-      );
-
-      // Emit to session room (for customer)
-      await pusher.trigger(
-        `session-${sessionToken}`,
-        "session:updated",
-        eventData
-      );
-    }
+    // Emit to session room (for customer)
+    await pusher.trigger(`session-${sessionToken}`, "session:updated", eventData);
+    
+    console.log(`[PUSHER] ✅ Emitted session:updated to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("[WS] Failed to emit session:updated event:", error);
+    console.error("[PUSHER] ❌ Failed to emit session:updated:", error);
   }
 }
 
 /**
- * Emit session closed/paid event (when session is closed or paid)
+ * Emit a session:closed event
  */
 export async function emitSessionClosed(
   restaurantId: string,
@@ -236,31 +215,17 @@ export async function emitSessionClosed(
     paymentMethod?: string;
   }
 ) {
+  const pusher = getPusherInstance();
+  if (!pusher) {
+    return;
+  }
+
   try {
-    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET) {
-      const pusher = new Pusher({
-        appId: process.env.PUSHER_APP_ID,
-        key: process.env.PUSHER_KEY,
-        secret: process.env.PUSHER_SECRET,
-        cluster: process.env.PUSHER_CLUSTER || "ap2",
-        useTLS: true,
-      });
-
-      await pusher.trigger(
-        `restaurant-${restaurantId}`,
-        "session:closed",
-        eventData
-      );
-
-      await pusher.trigger(
-        `session-${sessionToken}`,
-        "session:closed",
-        eventData
-      );
-    }
+    await pusher.trigger(`restaurant-${restaurantId}`, "session:closed", eventData);
+    await pusher.trigger(`session-${sessionToken}`, "session:closed", eventData);
+    
+    console.log(`[PUSHER] ✅ Emitted session:closed to restaurant-${restaurantId}`);
   } catch (error) {
-    console.error("Failed to emit session:updated event:", error);
-    // Don't fail the request if WebSocket emission fails
+    console.error("[PUSHER] ❌ Failed to emit session:closed:", error);
   }
 }
-

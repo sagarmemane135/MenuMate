@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { Users, Calendar, CreditCard, Store, CheckCircle2, Clock, Eye, X, Receipt } from "lucide-react";
 import { formatIndianDateTime } from "@/lib/date-utils";
-import { usePusherChannel } from "@/lib/pusher-client";
+import { useRealtime } from "@/lib/use-realtime";
 
 interface Session {
   id: string;
@@ -69,21 +69,19 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
     cleanupInactiveSessions();
   }, []); // Run once on mount
 
-  // Listen for session updates (when orders are added, totals change)
-  usePusherChannel(
-    `restaurant-${restaurantId}`,
-    "session:updated",
-    (data: unknown) => {
-      console.log("[SESSIONS] Received session:updated event:", data);
+  // Listen for session updates (when orders are added, totals change) - Pusher or polling
+  useRealtime({
+    channelName: `restaurant-${restaurantId}`,
+    eventName: "session:updated",
+    callback: (data: unknown) => {
       const eventData = data as {
         sessionId: string;
         tableNumber: string;
         totalAmount: string;
         ordersCount: number;
       };
-      console.log("[SESSIONS] Updating session:", eventData.sessionId, "with total:", eventData.totalAmount);
-      setSessions((prev) => {
-        const updated = prev.map((session) =>
+      setSessions((prev) =>
+        prev.map((session) =>
           session.id === eventData.sessionId
             ? {
                 ...session,
@@ -91,12 +89,12 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                 ordersCount: eventData.ordersCount,
               }
             : session
-        );
-        console.log("[SESSIONS] Updated sessions:", updated);
-        return updated;
-      });
-    }
-  );
+        )
+      );
+    },
+    pollingUrl: `/api/realtime/sessions?restaurantId=${restaurantId}`,
+    pollingInterval: 5000,
+  });
   const [sessionDetails, setSessionDetails] = useState<{
     session: Session;
     orders: Array<{

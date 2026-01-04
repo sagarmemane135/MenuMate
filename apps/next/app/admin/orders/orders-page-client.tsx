@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, Button, useToast } from "@menumate/app";
-import { usePusherChannel } from "@/lib/pusher-client";
+import { useRealtime } from "@/lib/use-realtime";
 import { formatIndianDateTime } from "@/lib/date-utils";
 
 interface Order {
@@ -41,13 +41,14 @@ const statusOptions: Array<{ value: Order["status"]; label: string }> = [
 export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClientProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [lastPoll, setLastPoll] = useState<string>(new Date().toISOString());
   const { showToast } = useToast();
 
-  // Listen for new orders and status updates
-  usePusherChannel(
-    `restaurant-${restaurantId}`,
-    "order:created",
-    (data: unknown) => {
+  // Listen for new orders (Pusher or polling)
+  useRealtime({
+    channelName: `restaurant-${restaurantId}`,
+    eventName: "order:created",
+    callback: (data: unknown) => {
       const eventData = data as { 
         order: {
           id: string;
@@ -60,7 +61,6 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
         };
         session: { id: string; tableNumber: string };
       };
-      // Map to Order interface (this page doesn't need items, customerName, notes)
       const newOrder: Order = {
         id: eventData.order.id,
         tableNumber: eventData.order.tableNumber,
@@ -72,13 +72,16 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
       };
       setOrders((prev) => [newOrder, ...prev]);
       showToast("New order received! 🎉", "info");
-    }
-  );
+    },
+    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}&since=${lastPoll}`,
+    pollingInterval: 5000,
+  });
 
-  usePusherChannel(
-    `restaurant-${restaurantId}`,
-    "order:status:updated",
-    (data: unknown) => {
+  // Listen for order status updates (Pusher or polling)
+  useRealtime({
+    channelName: `restaurant-${restaurantId}`,
+    eventName: "order:status:updated",
+    callback: (data: unknown) => {
       const eventData = data as { orderId: string; status: string };
       setOrders((prev) =>
         prev.map((order) =>
@@ -87,8 +90,10 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
             : order
         )
       );
-    }
-  );
+    },
+    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}`,
+    pollingInterval: 5000,
+  });
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingOrderId(orderId);
