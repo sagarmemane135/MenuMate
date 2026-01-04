@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/auth";
-import { db, restaurants, users, eq } from "@menumate/db";
+import { db, restaurants, users, orders, eq, and, gte } from "@menumate/db";
 import { Card } from "@menumate/app";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -18,6 +18,8 @@ export default async function AdminDashboard() {
     let restaurant = null;
     let activeSessions: any[] = [];
     let pendingCounterPayments: any[] = [];
+    let todayRevenue = 0;
+    let topSellingItems: Array<{ name: string; quantity: number; revenue: number }> = [];
     
     if (user.role !== "super_admin") {
       try {
@@ -77,6 +79,79 @@ export default async function AdminDashboard() {
           } catch (error) {
             console.error("Error fetching pending counter payments:", error);
             pendingCounterPayments = [];
+          }
+          
+          // Fetch today's revenue
+          try {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const todayOrders = await db
+              .select()
+              .from(orders)
+              .where(
+                and(
+                  eq(orders.restaurantId, restaurant.id),
+                  gte(orders.createdAt, startOfDay)
+                )
+              );
+            
+            todayRevenue = todayOrders.reduce(
+              (sum, order) => sum + parseFloat(order.totalAmount),
+              0
+            );
+          } catch (error) {
+            console.error("Error fetching today's revenue:", error);
+            todayRevenue = 0;
+          }
+          
+          // Fetch top 3 selling items (last 30 days)
+          try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const recentOrders = await db
+              .select()
+              .from(orders)
+              .where(
+                and(
+                  eq(orders.restaurantId, restaurant.id),
+                  gte(orders.createdAt, thirtyDaysAgo)
+                )
+              );
+            
+            // Aggregate items
+            const itemMetrics = new Map<string, { name: string; quantity: number; revenue: number }>();
+            
+            recentOrders.forEach((order) => {
+              const items = order.items as Array<{
+                itemId: string;
+                name: string;
+                quantity: number;
+                price: number;
+              }>;
+              
+              items.forEach((item) => {
+                const existing = itemMetrics.get(item.itemId) || {
+                  name: item.name,
+                  quantity: 0,
+                  revenue: 0,
+                };
+                
+                existing.quantity += item.quantity;
+                existing.revenue += item.quantity * item.price;
+                
+                itemMetrics.set(item.itemId, existing);
+              });
+            });
+            
+            // Get top 3 by quantity
+            topSellingItems = Array.from(itemMetrics.values())
+              .sort((a, b) => b.quantity - a.quantity)
+              .slice(0, 3);
+          } catch (error) {
+            console.error("Error fetching top selling items:", error);
+            topSellingItems = [];
           }
         }
       } catch (error) {
@@ -333,6 +408,8 @@ export default async function AdminDashboard() {
           userEmail={user.email} 
           activeSessions={activeSessions}
           pendingCounterPayments={pendingCounterPayments}
+          todayRevenue={todayRevenue}
+          topSellingItems={topSellingItems}
         />
       )}
     </div>

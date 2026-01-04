@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { EditRestaurantForm } from "./edit-restaurant-form";
-import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2, Users } from "lucide-react";
+import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2, Users, DollarSign, TrendingUp, Award, CreditCard, Clock } from "lucide-react";
+import Link from "next/link";
 
 interface DashboardClientProps {
   restaurant: {
@@ -26,9 +27,18 @@ interface DashboardClientProps {
     totalAmount: string;
     startedAt: Date;
   }>;
+  todayRevenue: number;
+  topSellingItems: Array<{ name: string; quantity: number; revenue: number }>;
 }
 
-export function DashboardClient({ restaurant, userEmail, activeSessions, pendingCounterPayments = [] }: DashboardClientProps) {
+export function DashboardClient({ 
+  restaurant, 
+  userEmail, 
+  activeSessions, 
+  pendingCounterPayments = [],
+  todayRevenue,
+  topSellingItems
+}: DashboardClientProps) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [restaurantData, setRestaurantData] = useState(restaurant);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -53,30 +63,24 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
     }
   }, [restaurantData, tableNumber]);
 
-  // Generate QR code when menuUrl is ready
-  useEffect(() => {
-    if (menuUrl && !qrCode) {
-      generateQRCode();
-    }
-  }, [menuUrl]);
-
   const generateQRCode = async () => {
     if (!restaurantData) return;
-    
+
     setIsGeneratingQR(true);
     try {
-      const response = await fetch("/api/qr-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: menuUrl }),
+      const QRCode = await import("qrcode");
+      const url = await QRCode.toDataURL(menuUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#1e3a8a",
+          light: "#ffffff",
+        },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setQrCode(data.qrCode);
-      }
+      setQrCode(url);
     } catch (error) {
       console.error("Error generating QR code:", error);
+      showToast("Failed to generate QR code", "error");
     } finally {
       setIsGeneratingQR(false);
     }
@@ -110,6 +114,125 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
 
   return (
     <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-600">Today's Revenue</p>
+              <p className="text-3xl font-bold text-success-600 mt-2">
+                ₹{todayRevenue.toFixed(0)}
+              </p>
+              <p className="text-sm text-neutral-500 mt-1">
+                Current day earnings
+              </p>
+            </div>
+            <div className="p-3 bg-success-50 rounded-lg">
+              <DollarSign className="h-8 w-8 text-success-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-600">Active Sessions</p>
+              <p className="text-3xl font-bold text-primary-600 mt-2">
+                {activeSessions.length}
+              </p>
+              <p className="text-sm text-neutral-500 mt-1">
+                Tables currently dining
+              </p>
+            </div>
+            <div className="p-3 bg-primary-50 rounded-lg">
+              <Users className="h-8 w-8 text-primary-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-600">Pending Payments</p>
+              <p className="text-3xl font-bold text-warning-600 mt-2">
+                {pendingCounterPayments.length}
+              </p>
+              <p className="text-sm text-neutral-500 mt-1">
+                {pendingCounterPayments.length === 1 ? "payment" : "payments"} awaiting
+              </p>
+            </div>
+            <div className="p-3 bg-warning-50 rounded-lg">
+              <CreditCard className="h-8 w-8 text-warning-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-600">Top Item</p>
+              <p className="text-lg font-bold text-neutral-900 mt-2 truncate" title={topSellingItems[0]?.name || "N/A"}>
+                {topSellingItems[0]?.name || "N/A"}
+              </p>
+              <p className="text-sm text-neutral-500 mt-1">
+                {topSellingItems[0]?.quantity || 0} sold
+              </p>
+            </div>
+            <div className="p-3 bg-neutral-50 rounded-lg">
+              <Award className="h-8 w-8 text-neutral-600" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Top Selling Items */}
+      {topSellingItems.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-success-600" />
+              Top 3 Selling Items (Last 30 Days)
+            </h2>
+            <Link 
+              href="/admin/analytics?view=items"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              View All →
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {topSellingItems.map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    index === 0 ? "bg-warning-100 text-warning-700" :
+                    index === 1 ? "bg-neutral-200 text-neutral-700" :
+                    "bg-warning-50 text-warning-600"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-neutral-900">{item.name}</p>
+                    <p className="text-sm text-neutral-600">
+                      {item.quantity} sold • ₹{item.revenue.toFixed(0)} revenue
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-success-600">
+                    ₹{(item.revenue / item.quantity).toFixed(0)}
+                  </p>
+                  <p className="text-xs text-neutral-500">avg price</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Restaurant Card */}
       <div className="bg-white border border-neutral-200 rounded-card shadow-card">
         {restaurantData ? (
@@ -127,191 +250,140 @@ export function DashboardClient({ restaurant, userEmail, activeSessions, pending
                 </div>
               </div>
               <Button
+                onClick={() => setShowEditForm(true)}
                 variant="outline"
                 size="sm"
-                onClick={() => setShowEditForm(true)}
-                className="btn-secondary"
+                className="flex items-center gap-2"
               >
-                <Edit className="w-4 h-4 mr-1.5" />
+                <Edit className="w-4 h-4" />
                 Edit
               </Button>
             </div>
-            
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-sm font-medium text-neutral-600">Status:</span>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  restaurantData.isActive 
-                    ? "bg-success-50 text-success-700" 
-                    : "bg-neutral-100 text-neutral-700"
-                }`}
-              >
-                {restaurantData.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
 
-            {menuUrl && (
-              <a
-                href={menuUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors text-sm"
-              >
-                View Public Menu
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </a>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-12 p-6">
-            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-              <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
-            </div>
-            <p className="text-sm text-neutral-600">No restaurant found</p>
-          </div>
-        )}
-      </div>
+            {/* QR Code Section */}
+            <div className="mb-6 p-4 bg-neutral-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-neutral-900 mb-3">Menu QR Code & Link</h3>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-neutral-700 mb-2">
+                    Table Number (for QR)
+                  </label>
+                  <input
+                    type="text"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    placeholder="1"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-neutral-700 mb-2">
+                    Menu URL
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={menuUrl}
+                      readOnly
+                      className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white"
+                    />
+                    <Button
+                      onClick={copyMenuLink}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
 
-      {/* QR Code Section */}
-      {restaurantData && (
-        <div className="bg-white border border-neutral-200 rounded-card shadow-card">
-          <div className="px-6 py-4 border-b border-neutral-200">
-            <h2 className="text-base font-semibold text-neutral-900">QR Code for Customers</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* QR Code Display */}
-              <div className="flex flex-col items-center justify-center bg-neutral-50 border border-neutral-200 rounded-lg p-6">
-                {isGeneratingQR ? (
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className="w-12 h-12 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm text-neutral-600">Generating QR Code...</p>
-                  </div>
-                ) : qrCode ? (
-                  <>
-                    <div className="bg-white p-4 rounded-lg shadow-soft mb-4">
-                      <img src={qrCode} alt="Restaurant QR Code" className="w-48 h-48" />
-                    </div>
-                    <p className="text-xs text-neutral-600 text-center">
-                      Scan to view menu
-                    </p>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className="w-12 h-12 rounded-lg bg-neutral-200 flex items-center justify-center">
-                      <QrCode className="w-6 h-6 text-neutral-500" />
-                    </div>
-                    <p className="text-sm text-neutral-600">No QR code generated</p>
-                  </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={generateQRCode}
+                  disabled={isGeneratingQR}
+                  className="flex items-center gap-2"
+                >
+                  <QrCode className="w-4 h-4" />
+                  {isGeneratingQR ? "Generating..." : "Generate QR Code"}
+                </Button>
+                {qrCode && (
+                  <Button
+                    onClick={downloadQRCode}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col justify-center space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-                    Share Your Menu
-                  </h3>
-                  <p className="text-sm text-neutral-600 mb-4">
-                    Print this QR code and place it on your tables. Customers can scan it to view your menu instantly.
-                  </p>
-                  <div className="mb-4">
-                    <label className="text-xs font-medium text-neutral-700 mb-1.5 block">
-                      Table Number (for QR code URL)
-                    </label>
-                    <input
-                      type="text"
-                      value={tableNumber}
-                      onChange={(e) => {
-                        setTableNumber(e.target.value);
-                        setQrCode(null);
-                      }}
-                      placeholder="e.g., 1, 2, 3..."
-                      className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
-                    />
-                    <p className="text-xs text-neutral-500 mt-1.5">
-                      The QR code will include this table number in the URL
-                    </p>
+              {qrCode && (
+                <div className="mt-4 p-4 bg-white rounded-lg border border-neutral-200 inline-block">
+                  <img src={qrCode} alt="Menu QR Code" className="w-64 h-64" />
+                </div>
+              )}
+            </div>
+
+            {/* Quick Links */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <a
+                href={`/r/${restaurantData.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <Menu className="w-5 h-5 text-primary-600" />
                   </div>
+                  <span className="text-sm font-medium text-neutral-900">View Menu</span>
                 </div>
+                <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-primary-600" />
+              </a>
 
-                <div className="space-y-2">
-                  <Button
-                    onClick={downloadQRCode}
-                    disabled={!qrCode}
-                    className="w-full btn-primary"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download QR Code
-                  </Button>
-
-                  <Button
-                    onClick={copyMenuLink}
-                    variant="outline"
-                    className="w-full btn-secondary"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Copy Menu Link
-                  </Button>
-
-                  <Button
-                    onClick={generateQRCode}
-                    variant="outline"
-                    className="w-full btn-secondary"
-                    disabled={isGeneratingQR}
-                  >
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Regenerate QR Code
-                  </Button>
+              <a
+                href="/admin/menu"
+                className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <Edit className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <span className="text-sm font-medium text-neutral-900">Edit Menu</span>
                 </div>
+                <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-primary-600" />
+              </a>
 
-                <div className="mt-2 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                  <p className="text-xs text-primary-900">
-                    <strong>Tip:</strong> Print multiple QR codes and place them on each table for best results.
-                  </p>
+              <a
+                href="/admin/orders"
+                className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <span className="text-sm font-medium text-neutral-900">View Orders</span>
                 </div>
-              </div>
+                <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-primary-600" />
+              </a>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Quick Actions Card */}
-      <div className="bg-white border border-neutral-200 rounded-card shadow-card">
-        <div className="px-6 py-4 border-b border-neutral-200">
-          <h2 className="text-base font-semibold text-neutral-900">Quick Actions</h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a
-              href="/admin/menu"
-              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
-                <Menu className="w-5 h-5 text-primary-600" />
-              </div>
-              <span className="text-sm font-medium text-neutral-900">Manage Menu</span>
-            </a>
-            <a
-              href="/admin/orders"
-              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
-                <Package className="w-5 h-5 text-primary-600" />
-              </div>
-              <span className="text-sm font-medium text-neutral-900">View Orders</span>
-            </a>
-            <a
-              href="/admin/sessions"
-              className="flex items-center space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
-                <Users className="w-5 h-5 text-primary-600" />
-              </div>
-              <span className="text-sm font-medium text-neutral-900">Table Sessions</span>
-            </a>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+              <UtensilsCrossed className="w-8 h-8 text-neutral-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Restaurant Found</h3>
+            <p className="text-sm text-neutral-600 mb-4">
+              You don't have a restaurant set up yet. Contact support to get started.
+            </p>
+            <p className="text-xs text-neutral-500">Logged in as: {userEmail}</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
