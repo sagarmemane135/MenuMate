@@ -33,7 +33,17 @@ export function AnalyticsPageClient({
   subscriptionTier,
   userName,
 }: AnalyticsPageClientProps) {
-  const [view, setView] = useState<"daily" | "monthly" | "items" | "categories">("daily");
+  // Load persisted view from localStorage or default to "daily"
+  const [view, setView] = useState<"daily" | "monthly" | "items" | "categories">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("analytics-view");
+      if (saved && ["daily", "monthly", "items", "categories"].includes(saved)) {
+        return saved as "daily" | "monthly" | "items" | "categories";
+      }
+    }
+    return "daily";
+  });
+  
   const [loading, setLoading] = useState(false);
   const [dailyData, setDailyData] = useState<any>(null);
   const [monthlyData, setMonthlyData] = useState<any>(null);
@@ -42,6 +52,13 @@ export function AnalyticsPageClient({
   const { showToast } = useToast();
 
   const isPro = subscriptionTier === "pro" || subscriptionTier === "enterprise";
+
+  // Persist view selection to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("analytics-view", view);
+    }
+  }, [view]);
 
   useEffect(() => {
     if (isPro) {
