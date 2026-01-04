@@ -10,67 +10,71 @@ interface DailyData {
 export function MonthlyChart({ data }: { data: DailyData[] }) {
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 1);
   
-  // Filter to only show days that have passed (non-zero revenue or orders)
+  // Filter to only show days that have passed
   const today = new Date().getDate();
   const displayData = data.filter(d => d.day <= today);
+  
+  const chartHeight = 300; // Fixed height in pixels
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Chart */}
-      <div className="bg-neutral-50 p-6 rounded-lg overflow-hidden">
+      <div className="bg-neutral-50 p-6 rounded-lg">
         <div className="flex gap-4">
           {/* Y-axis labels */}
-          <div className="flex flex-col justify-between text-xs text-neutral-600 py-2 w-16" style={{ minHeight: "300px" }}>
-            <div className="text-right">₹{Math.round(maxRevenue)}</div>
+          <div className="flex flex-col justify-between text-xs text-neutral-600 w-20" style={{ height: `${chartHeight}px` }}>
+            <div className="text-right font-medium">₹{Math.round(maxRevenue)}</div>
             <div className="text-right">₹{Math.round(maxRevenue * 0.75)}</div>
             <div className="text-right">₹{Math.round(maxRevenue * 0.5)}</div>
             <div className="text-right">₹{Math.round(maxRevenue * 0.25)}</div>
-            <div className="text-right">₹0</div>
+            <div className="text-right font-medium">₹0</div>
           </div>
 
-          {/* Chart area */}
-          <div className="flex-1 flex items-end justify-start gap-2 overflow-x-auto" style={{ minHeight: "300px" }}>
-            {displayData.map((item) => {
-              const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
-              const barHeight = item.revenue > 0 ? `${Math.max(height, 2)}%` : '0%'; // Minimum 2% for visibility
+          {/* Chart area with scrolling */}
+          <div className="flex-1 overflow-x-auto">
+            <div className="flex items-end gap-3 pb-2" style={{ height: `${chartHeight}px`, minWidth: `${displayData.length * 50}px` }}>
+              {displayData.map((item) => {
+                const heightPercent = maxRevenue > 0 ? (item.revenue / maxRevenue) : 0;
+                const barHeightPx = Math.max(heightPercent * (chartHeight - 20), item.revenue > 0 ? 8 : 0);
 
-              return (
-                <div
-                  key={item.day}
-                  className="group relative flex-shrink-0 flex flex-col items-center"
-                  style={{ width: `${Math.max(100 / displayData.length, 40)}px` }}
-                >
-                  {/* Bar */}
-                  <div className="w-full flex items-end justify-center" style={{ minHeight: "300px" }}>
+                return (
+                  <div
+                    key={item.day}
+                    className="group relative flex flex-col items-center justify-end flex-1 min-w-[40px]"
+                  >
+                    {/* Bar */}
                     <div
-                      className="bg-primary-500 hover:bg-primary-600 transition-all duration-200 rounded-t cursor-pointer w-full"
-                      style={{ height: barHeight }}
+                      className="w-full bg-primary-500 hover:bg-primary-600 transition-all duration-200 rounded-t-lg cursor-pointer relative"
+                      style={{ height: `${barHeightPx}px` }}
                     >
-                      {/* Tooltip */}
+                      {/* Tooltip on hover */}
                       {item.revenue > 0 && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-neutral-900 text-white text-xs px-3 py-2 rounded shadow-lg whitespace-nowrap z-20">
-                          <div className="font-semibold text-center">Day {item.day}</div>
-                          <div className="text-primary-300">₹{item.revenue.toFixed(0)}</div>
-                          <div className="text-neutral-300">{item.orders} orders</div>
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900"></div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                          <div className="bg-neutral-900 text-white text-xs px-3 py-2 rounded shadow-lg whitespace-nowrap">
+                            <div className="font-semibold text-center mb-1">Day {item.day}</div>
+                            <div className="text-primary-300">Revenue: ₹{item.revenue.toFixed(0)}</div>
+                            <div className="text-neutral-300">Orders: {item.orders}</div>
+                          </div>
+                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900 mx-auto"></div>
                         </div>
                       )}
                     </div>
+                    
+                    {/* Day label */}
+                    <div className="text-xs text-neutral-700 font-semibold mt-2">
+                      {item.day}
+                    </div>
                   </div>
-                  {/* Day label below */}
-                  <div className="text-xs text-neutral-600 mt-2 font-medium">
-                    {item.day}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-2 text-xs text-neutral-600">
-        <span>Showing {displayData.length} days of current month</span>
+      {/* Summary */}
+      <div className="text-center text-sm text-neutral-600">
+        Showing <span className="font-semibold text-neutral-900">{displayData.length} days</span> of current month
       </div>
     </div>
   );

@@ -8,69 +8,74 @@ interface CategoryData {
 }
 
 export function CategoryChart({ data }: { data: CategoryData[] }) {
-  // Colors for the pie chart
+  // Colors for the chart
   const colors = [
-    "bg-primary-500",
-    "bg-success-500",
-    "bg-warning-500",
-    "bg-error-500",
-    "bg-neutral-500",
-    "bg-primary-300",
-    "bg-success-300",
-    "bg-warning-300",
+    { bg: "bg-primary-500", text: "text-primary-900" },
+    { bg: "bg-success-500", text: "text-success-900" },
+    { bg: "bg-warning-500", text: "text-warning-900" },
+    { bg: "bg-error-500", text: "text-error-900" },
   ];
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {/* Bar Chart */}
-      <div className="space-y-3">
-        {data.map((category, index) => (
-          <div key={category.categoryName} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-neutral-900">{category.categoryName}</span>
-              <span className="text-neutral-600">₹{category.revenue}</span>
+      <div className="space-y-4">
+        {data.map((category, index) => {
+          const percentage = parseFloat(category.revenuePercentage);
+          const color = colors[index % colors.length];
+          
+          return (
+            <div key={category.categoryName} className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-neutral-900">{category.categoryName}</span>
+                <span className="text-neutral-600 font-medium">₹{category.revenue}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-10 bg-neutral-100 rounded-lg overflow-hidden relative">
+                  <div
+                    className={`h-full ${color.bg} transition-all duration-500 rounded-lg flex items-center`}
+                    style={{ width: `${Math.max(percentage, 10)}%` }}
+                  >
+                    {percentage >= 15 && (
+                      <span className="text-xs font-bold text-white ml-3">
+                        {percentage.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {percentage < 15 && (
+                  <span className={`text-sm font-bold ${color.text} min-w-[45px]`}>
+                    {percentage.toFixed(1)}%
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="relative h-8 bg-neutral-100 rounded-full overflow-visible">
-              <div
-                className={`h-full ${colors[index % colors.length]} transition-all duration-500 rounded-full`}
-                style={{ width: `${category.revenuePercentage}%` }}
-              />
-              {/* Label positioned outside for better visibility */}
-              <span 
-                className="absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white px-2"
-                style={{ 
-                  left: `${category.revenuePercentage}%`,
-                  transform: parseFloat(category.revenuePercentage) < 15 
-                    ? 'translateY(-50%)' 
-                    : 'translateX(-100%) translateY(-50%)'
-                }}
-              >
-                {category.revenuePercentage}%
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Details Table */}
-      <div className="bg-neutral-50 rounded-lg p-4 space-y-2">
-        <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-neutral-600 pb-2 border-b border-neutral-200">
+      <div className="bg-neutral-50 rounded-lg p-4 space-y-3">
+        <div className="grid grid-cols-3 gap-3 text-xs font-semibold text-neutral-600 pb-3 border-b border-neutral-200">
           <div>Category</div>
           <div className="text-right">Items Sold</div>
           <div className="text-right">Revenue</div>
         </div>
-        {data.map((category, index) => (
-          <div key={category.categoryName} className="grid grid-cols-3 gap-2 text-sm">
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded ${colors[index % colors.length]}`}></div>
-              <span className="truncate">{category.categoryName}</span>
+        {data.map((category, index) => {
+          const color = colors[index % colors.length];
+          return (
+            <div key={category.categoryName} className="grid grid-cols-3 gap-3 text-sm items-center">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded ${color.bg}`}></div>
+                <span className="truncate font-medium">{category.categoryName}</span>
+              </div>
+              <div className="text-right text-neutral-700 font-medium">{category.itemsSold}</div>
+              <div className="text-right font-bold text-neutral-900">
+                ₹{category.revenue}
+              </div>
             </div>
-            <div className="text-right text-neutral-600">{category.itemsSold}</div>
-            <div className="text-right font-semibold text-neutral-900">
-              ₹{category.revenue}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
