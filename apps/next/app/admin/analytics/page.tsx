@@ -6,7 +6,7 @@ import { AnalyticsPageClient } from "./analytics-page-client";
 export default async function AnalyticsPage() {
   const user = await getCurrentUser();
 
-  if (!user) {
+  if (!user || !user.id) {
     redirect("/login");
   }
 
@@ -14,7 +14,7 @@ export default async function AnalyticsPage() {
   const userRestaurants = await db
     .select()
     .from(restaurants)
-    .where(eq(restaurants.ownerId, user.id as string));
+    .where(eq(restaurants.ownerId, String(user.id)));
 
   if (userRestaurants.length === 0) {
     return (
@@ -30,12 +30,14 @@ export default async function AnalyticsPage() {
   }
 
   const restaurant = userRestaurants[0];
+  const subscriptionTier = user.subscriptionTier ? String(user.subscriptionTier) : "free";
+  const userName = user.fullName ? String(user.fullName) : "User";
 
   return (
     <AnalyticsPageClient
       restaurantId={restaurant.id}
-      subscriptionTier={(user.subscriptionTier as string) || "free"}
-      userName={user.fullName as string}
+      subscriptionTier={subscriptionTier}
+      userName={userName}
     />
   );
 }
