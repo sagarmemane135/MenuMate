@@ -4,6 +4,7 @@ import { relations } from "drizzle-orm";
 // Enum Types
 export const userRoleEnum = pgEnum("user_role", ["super_admin", "owner", "staff"]);
 export const userStatusEnum = pgEnum("user_status", ["pending", "approved", "rejected"]);
+export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "pro", "enterprise"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "cooking", "ready", "served", "paid", "cancelled"]);
 export const sessionStatusEnum = pgEnum("session_status", ["active", "closed", "paid"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["online", "counter", "split", "pending"]);
@@ -16,10 +17,13 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   role: userRoleEnum("role").default("owner").notNull(),
   status: userStatusEnum("status").default("pending").notNull(),
+  subscriptionTier: subscriptionTierEnum("subscription_tier").default("free").notNull(),
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   emailIdx: index("users_email_idx").on(table.email),
   statusIdx: index("users_status_idx").on(table.status),
+  subscriptionIdx: index("users_subscription_idx").on(table.subscriptionTier),
 }));
 
 // Restaurants Table
