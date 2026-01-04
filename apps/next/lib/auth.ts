@@ -100,7 +100,17 @@ export async function getCurrentUser(request?: NextRequest): Promise<JWTPayload 
     return null;
   }
 
-  return payload;
+  // Return enriched payload with all user fields
+  return {
+    ...payload,
+    id: user.id,
+    userId: user.id,
+    email: user.email,
+    role: user.role as "super_admin" | "owner" | "staff",
+    fullName: user.fullName,
+    status: user.status,
+    subscriptionTier: user.subscriptionTier || "free",
+  };
 }
 
 export async function requireAuth(): Promise<JWTPayload> {
