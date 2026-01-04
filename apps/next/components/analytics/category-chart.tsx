@@ -30,15 +30,23 @@ export function CategoryChart({ data }: { data: CategoryData[] }) {
               <span className="font-medium text-neutral-900">{category.categoryName}</span>
               <span className="text-neutral-600">₹{category.revenue}</span>
             </div>
-            <div className="h-8 bg-neutral-100 rounded-full overflow-hidden">
+            <div className="relative h-8 bg-neutral-100 rounded-full overflow-visible">
               <div
-                className={`h-full ${colors[index % colors.length]} transition-all duration-500 flex items-center justify-end px-3`}
+                className={`h-full ${colors[index % colors.length]} transition-all duration-500 rounded-full`}
                 style={{ width: `${category.revenuePercentage}%` }}
+              />
+              {/* Label positioned outside for better visibility */}
+              <span 
+                className="absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white px-2"
+                style={{ 
+                  left: `${category.revenuePercentage}%`,
+                  transform: parseFloat(category.revenuePercentage) < 15 
+                    ? 'translateY(-50%)' 
+                    : 'translateX(-100%) translateY(-50%)'
+                }}
               >
-                <span className="text-xs font-semibold text-white">
-                  {category.revenuePercentage}%
-                </span>
-              </div>
+                {category.revenuePercentage}%
+              </span>
             </div>
           </div>
         ))}
