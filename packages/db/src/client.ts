@@ -40,19 +40,7 @@ const client = postgres(connectionString, {
   onnotice: () => {}, // Suppress notices
 });
 
-// Don't test connection during build time
-// Connection will be tested when actually used (lazy connection)
-// This prevents build failures when DATABASE_URL might not be available
-if (isSupabase && process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-  // Only test in development, not during build or on Vercel
-  client`SELECT 1`
-    .then(() => {
-      console.log("[DB] ✅ Database connection successful");
-    })
-    .catch((err) => {
-      console.error("[DB] ❌ Database connection test failed:", err.message);
-    });
-}
+// Connection is established lazily when first query is executed
 
 export const db = drizzle(client, { schema });
 

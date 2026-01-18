@@ -39,34 +39,11 @@ export async function POST(request: NextRequest) {
     const validatedData = loginSchema.parse(body);
 
     // Find user
-    let user;
-    try {
-      const result = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, validatedData.email))
-        .limit(1);
-      user = result[0];
-    } catch (dbError: any) {
-      console.error("[LOGIN] Database query error:", {
-        error: dbError,
-        message: dbError?.message,
-        code: dbError?.code,
-        detail: dbError?.detail,
-        hint: dbError?.hint,
-      });
-      
-      // Check if it's a connection error
-      if (dbError?.code === 'XX000' || dbError?.message?.includes('Tenant') || dbError?.message?.includes('not found')) {
-        return errorResponse(
-          "Database connection error. Please try again later.",
-          503,
-          "Service temporarily unavailable"
-        );
-      }
-      
-      throw dbError; // Re-throw if it's not a connection error
-    }
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, validatedData.email))
+      .limit(1);
 
     if (!user) {
       return errorResponse("Invalid email or password", 401);
@@ -137,29 +114,12 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return validationErrorResponse(error.errors);
     }
 
-    // Enhanced error logging
-    console.error("[LOGIN] Login error:", {
-      error,
-      message: error?.message,
-      code: error?.code,
-      stack: error?.stack,
-      name: error?.name,
-    });
-    
-    // Return more specific error messages
-    if (error?.code === 'XX000' || error?.message?.includes('Tenant') || error?.message?.includes('not found')) {
-      return errorResponse(
-        "Database connection error. Please try again later.",
-        503,
-        "Service temporarily unavailable"
-      );
-    }
-    
+    console.error("Login error:", error);
     return internalErrorResponse("Failed to process login");
   }
 }
