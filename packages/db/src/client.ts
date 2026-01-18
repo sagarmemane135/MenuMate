@@ -40,8 +40,11 @@ const client = postgres(connectionString, {
   onnotice: () => {}, // Suppress notices
 });
 
-// Test connection on startup (non-blocking)
-if (isSupabase) {
+// Don't test connection during build time
+// Connection will be tested when actually used (lazy connection)
+// This prevents build failures when DATABASE_URL might not be available
+if (isSupabase && process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  // Only test in development, not during build or on Vercel
   client`SELECT 1`
     .then(() => {
       console.log("[DB] ✅ Database connection successful");
