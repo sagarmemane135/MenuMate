@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@menumate/db";
-import { sql } from "drizzle-orm";
+import { db, sql } from "@menumate/db";
 
 export async function GET() {
   try {
