@@ -12,7 +12,8 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "type-check": "turbo run type-check",
-    "create-admin": "tsx scripts/create-super-admin.ts"
+    "create-admin": "tsx scripts/create-super-admin.ts",
+    "migrate:sql": "npm run migrate:sql --workspace=@menumate/db"
   },
   "devDependencies": {
     "dotenv": "^17.2.3",

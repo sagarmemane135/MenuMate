@@ -30,6 +30,11 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // Staff (KDS users) can only access Kitchen
+    if (payload.role === "staff" && pathname !== "/admin/kitchen" && pathname.startsWith("/admin")) {
+      return NextResponse.redirect(new URL("/admin/kitchen", request.url));
+    }
+
     // Allow access - continue to the route
     return NextResponse.next();
   }

@@ -172,14 +172,14 @@ export function MenuPageClient({
   const allCategories = categories.map((cat) => ({ id: cat.id, name: cat.name }));
 
   return (
-    <div>
-      <div className="mb-8 flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex justify-between items-start gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Menu Management</h1>
-          <p className="mt-1 text-sm text-neutral-600">Organize and manage your restaurant menu</p>
+          <p className="mt-1 text-sm text-neutral-500">Organize and manage your restaurant menu</p>
         </div>
         {!showAddCategoryForm && !showAddItemForm && !editingItem && (
-          <Button onClick={() => setShowAddCategoryForm(true)} className="btn-primary">
+          <Button onClick={() => setShowAddCategoryForm(true)} size="sm">
             Add Category
           </Button>
         )}
@@ -218,22 +218,21 @@ export function MenuPageClient({
       )}
 
       {categories.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
-          <p className="text-sm text-neutral-600">
+        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-12 text-center">
+          <p className="text-sm text-neutral-500">
             No categories yet. Create your first category to get started.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {categories.map((category) => (
-            <div key={category.id} className="bg-white border border-neutral-200 rounded-card shadow-card">
-              <div className="px-6 py-4 border-b border-neutral-200 flex justify-between items-center">
+            <div key={category.id} className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50 flex justify-between items-center gap-3">
                 <h2 className="text-base font-semibold text-neutral-900">{category.name}</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="btn-secondary text-sm"
                     onClick={async () => {
                       const newName = prompt("Enter new category name:", category.name);
                       if (newName && newName.trim() && newName !== category.name) {
@@ -264,22 +263,21 @@ export function MenuPageClient({
                   <Button
                     variant="danger"
                     size="sm"
-                    className="text-sm"
                     onClick={() => handleDeleteCategory(category.id, category.name)}
                   >
                     Delete
                   </Button>
                 </div>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-5 space-y-4">
                 {category.menuItems.length === 0 ? (
                   <p className="text-sm text-neutral-500">No items in this category</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {category.menuItems.map((item) => (
                       <div
                         key={item.id}
-                        className="border border-neutral-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-soft transition-all"
+                        className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm hover:border-primary-200 hover:shadow transition-all duration-200"
                       >
                         {item.imageUrl && (
                           <img
@@ -288,28 +286,28 @@ export function MenuPageClient({
                             className="w-full h-32 object-cover rounded-lg mb-3"
                           />
                         )}
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-neutral-900 text-sm">{item.name}</h3>
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <h3 className="font-medium text-neutral-900 text-sm min-w-0 truncate">{item.name}</h3>
                           <button
                             onClick={() => setEditingItem(item)}
-                            className="text-primary-600 hover:text-primary-700 text-xs font-medium"
+                            className="text-primary-600 hover:text-primary-700 text-xs font-medium flex-shrink-0"
                           >
                             Edit
                           </button>
                         </div>
                         {item.description && (
-                          <p className="text-xs text-neutral-600 mb-2 line-clamp-2">{item.description}</p>
+                          <p className="text-xs text-neutral-500 mb-2 line-clamp-2">{item.description}</p>
                         )}
-                        <div className="flex justify-between items-center">
-                          <p className="text-base font-semibold text-neutral-900">
+                        <div className="flex justify-between items-center gap-2">
+                          <p className="text-sm font-semibold text-neutral-900">
                             ₹{parseFloat(item.price).toFixed(2)}
                           </p>
                           <button
                             onClick={() => handleToggleAvailability(item.id, item.isAvailable)}
-                            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                            className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors flex-shrink-0 ${
                               item.isAvailable
                                 ? "bg-success-50 text-success-700 hover:bg-success-100"
-                                : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                             }`}
                           >
                             {item.isAvailable ? "Available" : "Unavailable"}
@@ -323,7 +321,6 @@ export function MenuPageClient({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="btn-secondary"
                     onClick={() =>
                       setShowAddItemForm({
                         categoryId: category.id,

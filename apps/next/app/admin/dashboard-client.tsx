@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, Button, useToast } from "@menumate/app";
 import { EditRestaurantForm } from "./edit-restaurant-form";
 import { UtensilsCrossed, Edit, Menu, Package, ExternalLink, Download, QrCode, Share2, Users, DollarSign, TrendingUp, Award, CreditCard, Clock } from "lucide-react";
@@ -31,19 +31,49 @@ interface DashboardClientProps {
   topSellingItems: Array<{ name: string; quantity: number; revenue: number }>;
 }
 
+const DASHBOARD_STATS_POLL_MS = 15000;
+const PAYMENT_MARKED_EVENT = "admin:payment-marked-paid";
+
 export function DashboardClient({ 
   restaurant, 
   userEmail, 
   activeSessions, 
   pendingCounterPayments = [],
-  todayRevenue,
+  todayRevenue: initialTodayRevenue,
   topSellingItems
 }: DashboardClientProps) {
   const [showEditForm, setShowEditForm] = useState(false);
   const [restaurantData, setRestaurantData] = useState(restaurant);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [todayRevenue, setTodayRevenue] = useState(initialTodayRevenue);
+  const [topSellingItemsState, setTopSellingItemsState] = useState(topSellingItems);
   const { showToast } = useToast();
+
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/dashboard-stats", { credentials: "include" });
+      if (res.ok) {
+        const json = await res.json();
+        if (typeof json.todayRevenue === "number") setTodayRevenue(json.todayRevenue);
+        if (Array.isArray(json.topSellingItems)) setTopSellingItemsState(json.topSellingItems);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardStats();
+    const id = setInterval(fetchDashboardStats, DASHBOARD_STATS_POLL_MS);
+    return () => clearInterval(id);
+  }, [fetchDashboardStats]);
+
+  useEffect(() => {
+    const handler = () => fetchDashboardStats();
+    window.addEventListener(PAYMENT_MARKED_EVENT, handler);
+    return () => window.removeEventListener(PAYMENT_MARKED_EVENT, handler);
+  }, [fetchDashboardStats]);
 
   const handleRestaurantUpdated = (updated: typeof restaurant) => {
     setRestaurantData(updated);
@@ -159,10 +189,10 @@ export function DashboardClient({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="stat-label stat-label-fixed-height mb-1">Top Item</p>
-              <p className="min-h-[2.25rem] flex items-center text-lg font-semibold text-neutral-900 truncate" title={topSellingItems[0]?.name || "N/A"}>
-                {topSellingItems[0]?.name || "N/A"}
+              <p className="min-h-[2.25rem] flex items-center text-lg font-semibold text-neutral-900 truncate" title={topSellingItemsState[0]?.name || "N/A"}>
+                {topSellingItemsState[0]?.name || "N/A"}
               </p>
-              <p className="stat-change">{topSellingItems[0]?.quantity || 0} sold</p>
+              <p className="stat-change">{topSellingItemsState[0]?.quantity || 0} sold</p>
             </div>
             <div className="w-11 h-11 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Award className="w-5 h-5 text-neutral-600" />
@@ -171,56 +201,77 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* Top Selling Items */}
-      {topSellingItems.length > 0 && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-success-600" />
-              Top 3 Selling Items (Last 30 Days)
-            </h2>
-            <Link 
-              href="/admin/analytics?view=items"
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-            >
-              View All →
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {topSellingItems.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    index === 0 ? "bg-warning-100 text-warning-700" :
-                    index === 1 ? "bg-neutral-200 text-neutral-700" :
-                    "bg-warning-50 text-warning-600"
-                  }`}>
-                    {index + 1}
+      {/* Two-column: Top Selling Items (left) + Restaurant & QR (right) - equal height */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* Left column: Top Selling Items - real-time updated when payment is marked paid */}
+        {topSellingItemsState.length > 0 ? (
+          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white via-neutral-50/30 to-primary-50/20 shadow-sm h-full flex flex-col min-h-0">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary-100/30 rounded-full -translate-y-1/2 translate-x-1/2" aria-hidden />
+            <div className="relative px-6 py-5 flex flex-col flex-1 min-h-0">
+              <div className="flex items-center justify-between gap-4 mb-5 flex-shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-primary-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-neutral-900">{item.name}</p>
-                    <p className="text-sm text-neutral-600">
-                      {item.quantity} sold • ₹{item.revenue.toFixed(0)} revenue
-                    </p>
+                    <h2 className="text-base font-semibold text-neutral-900">Top 5 Selling Items</h2>
+                    <p className="text-xs text-neutral-500 mt-0.5">Last 30 days • Updates when payment is marked</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-success-600">
-                    ₹{(item.revenue / item.quantity).toFixed(0)}
-                  </p>
-                  <p className="text-xs text-neutral-500">avg price</p>
-                </div>
+                <Link
+                  href="/admin/analytics?view=items"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-lg transition-colors flex-shrink-0"
+                >
+                  View All
+                  <span aria-hidden>→</span>
+                </Link>
               </div>
-            ))}
+              <div className="space-y-2 flex-1 min-h-0">
+                {topSellingItemsState.map((item, index) => (
+                  <div
+                    key={`${item.name}-${index}`}
+                    className="flex items-center justify-between gap-4 py-3 px-4 rounded-xl bg-white/80 border border-neutral-100 hover:border-neutral-200 hover:bg-white transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${
+                          index === 0
+                            ? "bg-amber-100 text-amber-800"
+                            : index === 1
+                              ? "bg-neutral-200 text-neutral-700"
+                              : index === 2
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-neutral-100 text-neutral-600"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-neutral-900 truncate">{item.name}</p>
+                        <p className="text-xs text-neutral-500">
+                          {item.quantity} sold · ₹{item.revenue.toFixed(0)} revenue
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-sm font-semibold text-primary-600">
+                        ₹{(item.revenue / item.quantity).toFixed(0)}
+                      </p>
+                      <p className="text-xs text-neutral-400">avg</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </Card>
-      )}
+        ) : (
+          <div className="rounded-2xl border border-neutral-200 border-dashed bg-neutral-50/50 p-6 flex items-center justify-center min-h-[200px] h-full">
+            <p className="text-sm text-neutral-500">No sales data yet. Top items will appear here.</p>
+          </div>
+        )}
 
-      {/* Restaurant Card - same style as admin dashboard cards */}
-      <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+        {/* Right column: Restaurant Card + QR + Quick Links - stretches to match left */}
+        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0 h-full">
         {restaurantData ? (
           <>
             <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between gap-3">
@@ -244,13 +295,13 @@ export function DashboardClient({
               </Button>
             </div>
 
-            <div className="p-5">
-              {/* QR Code Section */}
-              <div className="mb-5 p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+            <div className="p-5 flex-1 min-h-0 flex flex-col">
+              {/* QR Code Section - compact */}
+              <div className="mb-4 p-4 bg-neutral-50 rounded-xl border border-neutral-100">
                 <h3 className="text-sm font-semibold text-neutral-900 mb-3">Menu QR Code & Link</h3>
-                <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                  <div className="flex-1 min-w-0">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1.5">Table Number (for QR)</label>
+                <div className="grid grid-cols-1 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Table Number (for QR)</label>
                     <input
                       type="text"
                       value={tableNumber}
@@ -259,8 +310,8 @@ export function DashboardClient({
                       className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1.5">Menu URL</label>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Menu URL</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -268,7 +319,7 @@ export function DashboardClient({
                         readOnly
                         className="flex-1 min-w-0 px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
                       />
-                      <Button onClick={copyMenuLink} variant="outline" size="sm" className="flex items-center gap-2 flex-shrink-0">
+                      <Button onClick={copyMenuLink} variant="outline" size="sm" className="flex-shrink-0">
                         <Share2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -278,64 +329,59 @@ export function DashboardClient({
                   <Button
                     onClick={generateQRCode}
                     disabled={isGeneratingQR}
+                    size="sm"
                     className="flex items-center gap-2"
                   >
                     <QrCode className="w-4 h-4" />
                     {isGeneratingQR ? "Generating..." : "Generate QR Code"}
                   </Button>
                   {qrCode && (
-                    <Button onClick={downloadQRCode} variant="outline" className="flex items-center gap-2">
+                    <Button onClick={downloadQRCode} variant="outline" size="sm" className="flex items-center gap-2">
                       <Download className="w-4 h-4" />
                       Download
                     </Button>
                   )}
                 </div>
                 {qrCode && (
-                  <div className="mt-4 p-4 bg-white rounded-xl border border-neutral-200 inline-block">
-                    <img src={qrCode} alt="Menu QR Code" className="w-64 h-64" />
+                  <div className="mt-3 p-3 bg-white rounded-xl border border-neutral-200 inline-block">
+                    <img src={qrCode} alt="Menu QR Code" className="w-48 h-48 lg:w-56 lg:h-56" />
                   </div>
                 )}
               </div>
 
-              {/* Quick Links - same alignment as stat cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Quick Links - enhanced pill-style actions */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <a
                   href={`/r/${restaurantData.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="stat-card flex-row flex items-center justify-between gap-3 hover:border-primary-200 transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-primary-50/50 hover:border-primary-200 transition-all duration-200 group shadow-sm hover:shadow"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
-                      <Menu className="w-5 h-5 text-primary-600" />
-                    </div>
-                    <span className="text-sm font-medium text-neutral-900">View Menu</span>
+                  <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200/50 transition-colors">
+                    <Menu className="w-3.5 h-3.5 text-primary-600" />
                   </div>
-                  <ExternalLink className="w-5 h-5 text-neutral-400 flex-shrink-0 group-hover:text-primary-600" />
+                  <span className="text-sm font-medium text-neutral-800 group-hover:text-primary-700 flex-1 min-w-0 whitespace-nowrap">View Menu</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0 group-hover:text-primary-500 transition-colors" />
                 </a>
                 <a
                   href="/admin/menu"
-                  className="stat-card flex-row flex items-center justify-between gap-3 hover:border-primary-200 transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-primary-50/50 hover:border-primary-200 transition-all duration-200 group shadow-sm hover:shadow"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
-                      <Edit className="w-5 h-5 text-primary-600" />
-                    </div>
-                    <span className="text-sm font-medium text-neutral-900">Edit Menu</span>
+                  <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200/50 transition-colors">
+                    <Edit className="w-3.5 h-3.5 text-primary-600" />
                   </div>
-                  <ExternalLink className="w-5 h-5 text-neutral-400 flex-shrink-0 group-hover:text-primary-600" />
+                  <span className="text-sm font-medium text-neutral-800 group-hover:text-primary-700 flex-1 min-w-0 whitespace-nowrap">Edit Menu</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0 group-hover:text-primary-500 transition-colors" />
                 </a>
                 <a
                   href="/admin/orders"
-                  className="stat-card flex-row flex items-center justify-between gap-3 hover:border-primary-200 transition-colors group"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-primary-50/50 hover:border-primary-200 transition-all duration-200 group shadow-sm hover:shadow"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
-                      <Package className="w-5 h-5 text-primary-600" />
-                    </div>
-                    <span className="text-sm font-medium text-neutral-900">View Orders</span>
+                  <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200/50 transition-colors">
+                    <Package className="w-3.5 h-3.5 text-primary-600" />
                   </div>
-                  <ExternalLink className="w-5 h-5 text-neutral-400 flex-shrink-0 group-hover:text-primary-600" />
+                  <span className="text-sm font-medium text-neutral-800 group-hover:text-primary-700 flex-1 min-w-0 whitespace-nowrap">View Orders</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0 group-hover:text-primary-500 transition-colors" />
                 </a>
               </div>
             </div>
@@ -352,6 +398,7 @@ export function DashboardClient({
             <p className="text-xs text-neutral-500">Logged in as: {userEmail}</p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

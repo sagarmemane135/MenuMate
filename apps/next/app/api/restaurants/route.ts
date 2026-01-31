@@ -60,11 +60,10 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (validatedData.name !== undefined) updateData.name = validatedData.name;
     if (validatedData.slug !== undefined) updateData.slug = validatedData.slug;
     if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive;
-
     const [updatedRestaurant] = await db
       .update(restaurants)
       .set(updateData)

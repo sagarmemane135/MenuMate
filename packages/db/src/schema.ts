@@ -14,7 +14,7 @@ export const userStatusEnum = pgEnum("user_status", ["pending", "approved", "rej
 export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "pro", "enterprise"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "cooking", "ready", "served", "paid", "cancelled"]);
 export const sessionStatusEnum = pgEnum("session_status", ["active", "closed", "paid"]);
-export const paymentMethodEnum = pgEnum("payment_method", ["online", "counter", "split", "pending"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["online", "counter", "split", "pending", "upi"]);
 
 // Users Table
 export const users = pgTable("users", {
@@ -43,6 +43,18 @@ export const restaurants = pgTable("restaurants", {
 }, (table) => ({
   slugIdx: index("restaurants_slug_idx").on(table.slug),
   ownerIdx: index("restaurants_owner_idx").on(table.ownerId),
+}));
+
+// Restaurant staff (KDS users) – links staff to a restaurant; staff can only access Kitchen
+export const restaurantStaff = pgTable("restaurant_staff", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  restaurantId: uuid("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  restaurantIdx: index("restaurant_staff_restaurant_idx").on(table.restaurantId),
+  userIdx: index("restaurant_staff_user_idx").on(table.userId),
+  userUnique: index("restaurant_staff_user_unique").on(table.userId),
 }));
 
 // Categories Table
@@ -114,9 +126,25 @@ export const orders = pgTable("orders", {
   statusIdx: index("orders_status_idx").on(table.status),
 }));
 
+// Order idempotency (prevents duplicate orders from double-clicks/retries)
+export const orderIdempotency = pgTable("order_idempotency", {
+  idempotencyKey: varchar("idempotency_key", { length: 64 }).primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  createdAtIdx: index("order_idempotency_created_at_idx").on(table.createdAt),
+}));
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  restaurants: many(restaurants),
+export const restaurantStaffRelations = relations(restaurantStaff, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [restaurantStaff.restaurantId],
+    references: [restaurants.id],
+  }),
+  user: one(users, {
+    fields: [restaurantStaff.userId],
+    references: [users.id],
+  }),
 }));
 
 export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
@@ -124,10 +152,16 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
     fields: [restaurants.ownerId],
     references: [users.id],
   }),
+  staff: many(restaurantStaff),
   categories: many(categories),
   menuItems: many(menuItems),
   orders: many(orders),
   tableSessions: many(tableSessions),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  restaurants: many(restaurants),
+  staffAssignments: many(restaurantStaff),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -181,5 +215,7 @@ export type MenuItem = typeof menuItems.$inferSelect;
 export type NewMenuItem = typeof menuItems.$inferInsert;
 export type TableSession = typeof tableSessions.$inferSelect;
 export type NewTableSession = typeof tableSessions.$inferInsert;
+export type RestaurantStaff = typeof restaurantStaff.$inferSelect;
+export type NewRestaurantStaff = typeof restaurantStaff.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;

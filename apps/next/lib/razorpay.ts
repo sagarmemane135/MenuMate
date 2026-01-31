@@ -34,13 +34,27 @@ export function verifyPaymentSignature(
   signature: string
 ): boolean {
   const crypto = require("crypto");
-  
+
   const body = orderId + "|" + paymentId;
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
     .update(body.toString())
     .digest("hex");
 
+  return expectedSignature === signature;
+}
+
+// Verify Razorpay webhook signature (raw body + X-Razorpay-Signature)
+export function verifyWebhookSignature(
+  rawBody: string,
+  signature: string,
+  webhookSecret: string
+): boolean {
+  const crypto = require("crypto");
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(rawBody)
+    .digest("hex");
   return expectedSignature === signature;
 }
 

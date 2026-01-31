@@ -5,6 +5,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "migrate": "drizzle-kit push:pg",
+    "migrate:sql": "tsx scripts/run-migrations.ts",
     "generate": "drizzle-kit generate:pg",
     "studio": "drizzle-kit studio",
     "migrate:served": "tsx scripts/add-served-status.ts",

@@ -64,12 +64,14 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // Calculate metrics
-    const currentRevenue = currentMonthOrders.reduce(
+    // Revenue only from paid orders
+    const currentMonthPaid = currentMonthOrders.filter((o) => o.isPaid === true);
+    const previousMonthPaid = previousMonthOrders.filter((o) => o.isPaid === true);
+    const currentRevenue = currentMonthPaid.reduce(
       (sum, o) => sum + parseFloat(o.totalAmount),
       0
     );
-    const previousRevenue = previousMonthOrders.reduce(
+    const previousRevenue = previousMonthPaid.reduce(
       (sum, o) => sum + parseFloat(o.totalAmount),
       0
     );
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
         currentMonth: {
           totalOrders: currentMonthOrders.length,
           totalRevenue: currentRevenue.toFixed(2),
-          averageOrderValue: (currentRevenue / currentMonthOrders.length || 0).toFixed(2),
+          averageOrderValue: (currentRevenue / currentMonthPaid.length || 0).toFixed(2),
         },
         previousMonth: {
           totalOrders: previousMonthOrders.length,

@@ -1,12 +1,15 @@
 import { NextRequest } from "next/server";
-import { db, orders, menuItems, restaurants, tableSessions, eq } from "@menumate/db";
+import { db, orders, menuItems, tableSessions, orderIdempotency, eq, lt } from "@menumate/db";
 import { z } from "zod";
 import {
   createdResponse,
   errorResponse,
   validationErrorResponse,
   internalErrorResponse,
+  successResponse,
 } from "@/lib/api-response";
+
+const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const createOrderSchema = z.object({
   sessionToken: z.string(),
@@ -23,8 +26,38 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const idempotencyKey = request.headers.get("idempotency-key") ?? request.headers.get("Idempotency-Key") ?? null;
     const body = await request.json();
     const validatedData = createOrderSchema.parse(body);
+
+    // Prune expired idempotency keys
+    const ttlCutoff = new Date(Date.now() - IDEMPOTENCY_TTL_MS);
+    await db.delete(orderIdempotency).where(lt(orderIdempotency.createdAt, ttlCutoff));
+
+    // Return existing order if idempotency key was used recently (prevents duplicate orders)
+    if (idempotencyKey && idempotencyKey.length <= 64) {
+      const [existing] = await db
+        .select()
+        .from(orderIdempotency)
+        .where(eq(orderIdempotency.idempotencyKey, idempotencyKey))
+        .limit(1);
+      if (existing && new Date(existing.createdAt).getTime() > ttlCutoff.getTime()) {
+        const [cachedOrder] = await db.select().from(orders).where(eq(orders.id, existing.orderId)).limit(1);
+        if (cachedOrder) {
+          return successResponse(
+            {
+              id: cachedOrder.id,
+              items: cachedOrder.items,
+              totalAmount: cachedOrder.totalAmount,
+              status: cachedOrder.status,
+              isPaid: cachedOrder.isPaid,
+              createdAt: cachedOrder.createdAt,
+            },
+            "Order created successfully"
+          );
+        }
+      }
+    }
 
     // Get session with customer details
     const [session] = await db
@@ -42,8 +75,11 @@ export async function POST(request: NextRequest) {
       .where(eq(tableSessions.sessionToken, validatedData.sessionToken))
       .limit(1);
 
-    if (!session || session.status !== "active") {
-      return errorResponse("Invalid or closed session", 400);
+    if (!session) {
+      return errorResponse("Session not found or expired.", 404);
+    }
+    if (session.status !== "active") {
+      return errorResponse("Session is closed or already paid. Please create a new session to order.", 400);
     }
 
     // Check if session is older than 1 hour (inactive timeout)
@@ -145,6 +181,41 @@ export async function POST(request: NextRequest) {
         totalAmount: sessionTotal.toString(),
       })
       .where(eq(tableSessions.id, session.id));
+
+    if (idempotencyKey && idempotencyKey.length <= 64) {
+      try {
+        await db.insert(orderIdempotency).values({
+          idempotencyKey: idempotencyKey,
+          orderId: newOrder.id,
+        });
+      } catch (idemError: unknown) {
+        const err = idemError as { code?: string };
+        if (err?.code === "23505") {
+          const [existing] = await db
+            .select()
+            .from(orderIdempotency)
+            .where(eq(orderIdempotency.idempotencyKey, idempotencyKey))
+            .limit(1);
+          if (existing) {
+            const [cachedOrder] = await db.select().from(orders).where(eq(orders.id, existing.orderId)).limit(1);
+            if (cachedOrder) {
+              return successResponse(
+                {
+                  id: cachedOrder.id,
+                  items: cachedOrder.items,
+                  totalAmount: cachedOrder.totalAmount,
+                  status: cachedOrder.status,
+                  isPaid: cachedOrder.isPaid,
+                  createdAt: cachedOrder.createdAt,
+                },
+                "Order created successfully"
+              );
+            }
+          }
+        }
+        throw idemError;
+      }
+    }
 
     return createdResponse(
       {

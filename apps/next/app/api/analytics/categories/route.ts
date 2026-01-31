@@ -74,7 +74,9 @@ export async function GET(request: NextRequest) {
       uniqueItems: Set<string>;
     }>();
 
-    periodOrders.forEach((order) => {
+    periodOrders
+      .filter((order) => order.isPaid === true)
+      .forEach((order) => {
       const items = order.items as Array<{
         itemId: string;
         name: string;

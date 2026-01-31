@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { SubscriptionExpiredContent } from "./subscription-expired/subscription-expired-content";
+import { PayAtCounterBanner } from "./pay-at-counter-banner";
 
 interface AdminLayoutWrapperProps {
   userRole: string;
@@ -12,6 +13,7 @@ interface AdminLayoutWrapperProps {
 /**
  * For owners with inactive restaurant, show subscription-expired content
  * instead of redirecting (avoids NEXT_REDIRECT console error in dev).
+ * Pay-at-counter banner shows on all admin pages for owners until dismissed or marked paid.
  */
 export function AdminLayoutWrapper({
   userRole,
@@ -28,5 +30,10 @@ export function AdminLayoutWrapper({
     return <SubscriptionExpiredContent />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {userRole === "owner" && <PayAtCounterBanner />}
+      {children}
+    </>
+  );
 }

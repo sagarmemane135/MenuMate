@@ -114,10 +114,9 @@ export default async function AdminDashboard() {
                 )
               );
             
-            todayRevenue = todayOrders.reduce(
-              (sum, order) => sum + parseFloat(order.totalAmount),
-              0
-            );
+            todayRevenue = todayOrders
+              .filter((order) => order.isPaid === true)
+              .reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
           } catch (error) {
             console.error("Error fetching today's revenue:", error);
             todayRevenue = 0;
@@ -141,7 +140,9 @@ export default async function AdminDashboard() {
             // Aggregate items
             const itemMetrics = new Map<string, { name: string; quantity: number; revenue: number }>();
             
-            recentOrders.forEach((order) => {
+            recentOrders
+              .filter((order) => order.isPaid === true)
+              .forEach((order) => {
               const items = order.items as Array<{
                 itemId: string;
                 name: string;
@@ -166,7 +167,7 @@ export default async function AdminDashboard() {
             // Get top 3 by quantity
             topSellingItems = Array.from(itemMetrics.values())
               .sort((a, b) => b.quantity - a.quantity)
-              .slice(0, 3);
+              .slice(0, 5);
           } catch (error) {
             console.error("Error fetching top selling items:", error);
             topSellingItems = [];

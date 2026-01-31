@@ -66,15 +66,16 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // Calculate metrics
+    // Revenue only from paid orders (payment successful or marked paid)
+    const paidOrdersList = dailyOrders.filter((o) => o.isPaid === true);
     const totalOrders = dailyOrders.length;
-    const totalRevenue = dailyOrders.reduce(
+    const totalRevenue = paidOrdersList.reduce(
       (sum, order) => sum + parseFloat(order.totalAmount),
       0
     );
-    const paidOrders = dailyOrders.filter((o) => o.isPaid).length;
+    const paidOrders = paidOrdersList.length;
     const pendingOrders = dailyOrders.filter((o) => !o.isPaid).length;
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const averageOrderValue = paidOrders > 0 ? totalRevenue / paidOrders : 0;
 
     // Active sessions
     const activeSessions = dailySessions.filter((s) => s.status === "active").length;
@@ -82,17 +83,17 @@ export async function GET(request: NextRequest) {
       (s) => s.status === "closed" || s.status === "paid"
     ).length;
 
-    // Hourly breakdown
+    // Hourly breakdown (revenue from paid orders only)
     const hourlyData = Array.from({ length: 24 }, (_, hour) => {
       const hourOrders = dailyOrders.filter((order) => {
         const orderHour = new Date(order.createdAt).getHours();
         return orderHour === hour;
       });
-      
+      const hourPaidOrders = hourOrders.filter((o) => o.isPaid === true);
       return {
         hour,
         orders: hourOrders.length,
-        revenue: hourOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount), 0),
+        revenue: hourPaidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount), 0),
       };
     });
 

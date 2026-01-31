@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button, useToast } from "@menumate/app";
 import { usePolling } from "@/lib/use-polling";
 import { formatIndianDateTime } from "@/lib/date-utils";
@@ -45,21 +45,42 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
   const { showToast } = useToast();
   const prevCountRef = useRef(initialOrders.length);
 
+  const applyOrdersFromApi = useCallback((res: { data?: Order[] }) => {
+    if (res.data && Array.isArray(res.data)) {
+      const newCount = res.data.length;
+      if (newCount > prevCountRef.current) {
+        showToast("New order received! 🎉", "info");
+      }
+      prevCountRef.current = newCount;
+      setOrders(res.data);
+    }
+  }, []);
+
   // Poll for order updates (local setup)
   usePolling<{ data: Order[] }>(
     `/api/realtime/orders?restaurantId=${restaurantId}`,
     5000,
-    (res) => {
-      if (res.data && Array.isArray(res.data)) {
-        const newCount = res.data.length;
-        if (newCount > prevCountRef.current) {
-          showToast("New order received! 🎉", "info");
-        }
-        prevCountRef.current = newCount;
-        setOrders(res.data as Order[]);
-      }
-    }
+    applyOrdersFromApi
   );
+
+  // Refetch orders immediately when payment is marked paid (e.g. from pay-at-counter panel)
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        const res = await fetch(`/api/realtime/orders?restaurantId=${restaurantId}`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const json = await res.json();
+          applyOrdersFromApi(json);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener("admin:payment-marked-paid", handler);
+    return () => window.removeEventListener("admin:payment-marked-paid", handler);
+  }, [restaurantId, applyOrdersFromApi]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingOrderId(orderId);
@@ -100,7 +121,9 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
     served: orders.filter(o => o.status === 'served').length,
   };
 
-  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+  const totalRevenue = orders
+    .filter((order) => order.isPaid === true)
+    .reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
 
   return (
     <div>
@@ -164,7 +187,7 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
             <div className="min-w-0 flex-1">
               <p className="stat-label stat-label-fixed-height mb-1">Total Revenue</p>
               <p className="stat-value min-h-[2.25rem] flex items-center">₹{totalRevenue.toFixed(0)}</p>
-              <p className="stat-change">From orders</p>
+              <p className="stat-change">From paid orders only</p>
             </div>
             <div className="w-11 h-11 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0 mt-0.5">
               <DollarSign className="w-5 h-5 text-success-600" />

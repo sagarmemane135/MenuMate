@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, tableSessions, orders, eq } from "@menumate/db";
+import { db, tableSessions, orders, restaurants, eq } from "@menumate/db";
 
 export async function GET(
   request: NextRequest,
@@ -8,19 +8,25 @@ export async function GET(
   try {
     const { sessionToken } = await params;
 
-    // Get session with all orders
-    const [session] = await db
-      .select()
+    // Get session with restaurant (for name on bill)
+    const [row] = await db
+      .select({
+        session: tableSessions,
+        restaurantName: restaurants.name,
+      })
       .from(tableSessions)
+      .innerJoin(restaurants, eq(tableSessions.restaurantId, restaurants.id))
       .where(eq(tableSessions.sessionToken, sessionToken))
       .limit(1);
 
-    if (!session) {
+    if (!row) {
       return NextResponse.json(
-        { error: "Session not found" },
+        { success: false, error: "Session not found or expired." },
         { status: 404 }
       );
     }
+
+    const session = row.session;
 
     // Check if session is active but older than 1 hour (inactive timeout)
     if (session.status === "active") {
@@ -63,6 +69,9 @@ export async function GET(
         customerName: session.customerName,
         customerPhone: session.customerPhone,
         startedAt: session.startedAt,
+      },
+      restaurant: {
+        name: row.restaurantName,
       },
       orders: sessionOrders.map((order) => ({
         id: order.id,

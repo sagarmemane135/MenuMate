@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { db, restaurants, eq } from "@menumate/db";
+import { getCurrentUser, getRestaurantForAdminUser } from "@/lib/auth";
 import { AdminNav } from "./nav";
 import { AdminLayoutWrapper } from "./admin-layout-wrapper";
 
@@ -16,13 +15,10 @@ export default async function AdminLayout({
       redirect("/login");
     }
 
+    // Owner: subscription depends on restaurant isActive. Staff: no subscription UI; use restaurant isActive for consistency.
     let restaurantActive: boolean | null = null;
-    if (user.role === "owner") {
-      const [restaurant] = await db
-        .select({ isActive: restaurants.isActive })
-        .from(restaurants)
-        .where(eq(restaurants.ownerId, user.userId))
-        .limit(1);
+    if (user.role === "owner" || user.role === "staff") {
+      const restaurant = await getRestaurantForAdminUser(user);
       restaurantActive = restaurant?.isActive ?? null;
     }
 

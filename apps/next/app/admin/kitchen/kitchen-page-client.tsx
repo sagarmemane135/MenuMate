@@ -33,10 +33,15 @@ export function KitchenPageClient({
   restaurantId,
   initialOrders,
 }: KitchenPageClientProps) {
+  const ACTIVE_STATUSES = ["pending", "cooking", "ready", "served"] as const;
+  const activeOrders = (list: Order[]) =>
+    list.filter((o) => ACTIVE_STATUSES.includes(o.status as (typeof ACTIVE_STATUSES)[number]));
+
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const { showToast } = useToast();
-  const prevCountRef = useRef(initialOrders.length);
+  const prevActiveCountRef = useRef(activeOrders(initialOrders).length);
+  const hasEstablishedBaselineRef = useRef(false);
 
   // Poll for orders (local setup) - kitchen refreshes more often
   usePolling<{ data: Order[] }>(
@@ -44,13 +49,16 @@ export function KitchenPageClient({
     3000,
     (res) => {
       if (res.data && Array.isArray(res.data)) {
-        const newCount = res.data.length;
-        if (newCount > prevCountRef.current) {
+        const all = res.data as Order[];
+        const active = activeOrders(all);
+        const newActiveCount = active.length;
+        if (hasEstablishedBaselineRef.current && newActiveCount > prevActiveCountRef.current) {
           playNotificationSound();
           showToast("New order received!", "info");
         }
-        prevCountRef.current = newCount;
-        setOrders(res.data as Order[]);
+        hasEstablishedBaselineRef.current = true;
+        prevActiveCountRef.current = newActiveCount;
+        setOrders(active);
       }
     }
   );

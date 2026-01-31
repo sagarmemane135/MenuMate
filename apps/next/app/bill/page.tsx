@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button, useToast } from "@menumate/app";
-import { Receipt, CreditCard, Store, Users, ArrowLeft, Loader2 } from "lucide-react";
+import { Receipt, CreditCard, Store, ArrowLeft, Loader2 } from "lucide-react";
 import type { RazorpayPaymentResponse, RazorpayCheckoutOptions } from "@/lib/types/razorpay";
 import { formatIndianTime } from "@/lib/date-utils";
 
@@ -29,8 +29,13 @@ interface Session {
   tableNumber: string;
   status: string;
   totalAmount: number;
+  paymentMethod?: string;
   paymentStatus: string;
   startedAt: string;
+}
+
+interface RestaurantInfo {
+  name: string;
 }
 
 function BillPageContent() {
@@ -41,10 +46,12 @@ function BillPageContent() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentSelection, setShowPaymentSelection] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"online" | "counter" | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionToken) {
@@ -62,6 +69,7 @@ function BillPageContent() {
           if (data.success && data.session) {
             setSession(data.session);
             setOrders(data.orders || []);
+            if (data.restaurant) setRestaurant(data.restaurant);
             if (data.session.status === "paid") {
               showToast("Payment received! Thank you! ✅", "success");
               if (sessionToken) {
@@ -85,12 +93,22 @@ function BillPageContent() {
       const response = await fetch(`/api/sessions/${sessionToken}`);
       const data = await response.json();
 
+      if (response.status === 404) {
+        setSession(null);
+        setOrders([]);
+        setSessionError(data.error || "Session not found or expired.");
+        return;
+      }
+      setSessionError(null);
       if (data.success) {
         setSession(data.session);
-        setOrders(data.orders);
+        setOrders(data.orders ?? []);
+        setRestaurant(data.restaurant ?? null);
       }
     } catch (error) {
       console.error("Failed to fetch session:", error);
+      setSession(null);
+      setSessionError("Session not found or expired.");
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +135,11 @@ function BillPageContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to create payment");
+        const errMsg = data.message || data.error || "Failed to create payment";
+        if (response.status >= 500 || /gateway|configured|unavailable/i.test(errMsg)) {
+          throw new Error("Online payment is temporarily unavailable. Please use Pay at counter.");
+        }
+        throw new Error(errMsg);
       }
 
       showToast("Opening payment gateway...", "info");
@@ -136,8 +158,33 @@ function BillPageContent() {
         description: `Table ${session.tableNumber} - Total Bill`,
         order_id: data.data.id,
         handler: async function (response: RazorpayPaymentResponse) {
-          // Close session with online payment
-          await closeSession("online", response.razorpay_payment_id);
+          // Verify payment on server before closing session (reliability + security)
+          try {
+            const verifyRes = await fetch(`/api/sessions/${sessionToken}/verify-online-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              showToast("Payment successful! Thank you!", "success");
+              if (sessionToken) {
+                localStorage.removeItem(`session_${sessionToken}`);
+                const masterKey = `active_session_${sessionToken.split("_")[0]}`;
+                localStorage.removeItem(masterKey);
+              }
+              setTimeout(() => router.push("/"), 2000);
+            } else {
+              showToast(verifyData.error || "Payment verification failed. Please contact support.", "error");
+            }
+          } catch (err) {
+            console.error("Verify payment error:", err);
+            showToast("Payment verification failed. Please contact support.", "error");
+          }
         },
         modal: {
           ondismiss: function () {
@@ -153,10 +200,12 @@ function BillPageContent() {
       razorpay.open();
     } catch (error) {
       console.error("Payment error:", error);
-      showToast(
-        error instanceof Error ? error.message : "Failed to process payment",
-        "error"
-      );
+      const message = error instanceof Error ? error.message : "Failed to process payment";
+      if (message.toLowerCase().includes("gateway") || message.toLowerCase().includes("configured") || message.toLowerCase().includes("unavailable")) {
+        showToast("Online payment is temporarily unavailable. Please use Pay at counter.", "error");
+      } else {
+        showToast(message, "error");
+      }
     } finally {
       setIsProcessingPayment(false);
     }
@@ -250,8 +299,12 @@ function BillPageContent() {
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
         <div className="text-center">
           <Receipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Active Session</h2>
-          <p className="text-gray-600 mb-4">Please scan the QR code on your table to start ordering.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {sessionError || "No Active Session"}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {sessionError ? "The link may have expired or the session was closed." : "Please scan the QR code on your table to start ordering."}
+          </p>
           <Button onClick={() => router.push("/")}>
             Go Back
           </Button>
@@ -435,19 +488,22 @@ function BillPageContent() {
             )}
 
             {/* Payment Status Messages */}
-            {session.status === "active" && session.paymentStatus === "pending" && selectedPaymentMethod === "counter" && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <Store className="w-6 h-6 text-yellow-600" />
-                  <div className="flex-1">
-                    <p className="font-semibold text-yellow-900">Payment Request Sent</p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Please proceed to the counter to complete your payment. Our staff has been notified.
-                    </p>
+            {session.status === "active" &&
+              session.paymentStatus === "pending" &&
+              selectedPaymentMethod === "counter" && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <Store className="w-6 h-6 text-yellow-600" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-yellow-900">Payment Request Sent</p>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Please proceed to the counter to complete your payment. Our staff has been
+                        notified.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {session.status !== "active" && (
               <div className="text-center py-4">

@@ -7,8 +7,8 @@ import {
   internalErrorResponse,
 } from "@/lib/api-response";
 import { z } from "zod";
-import { db, orders, restaurants, eq } from "@menumate/db";
-import { getCurrentUser } from "@/lib/auth";
+import { db, orders, eq } from "@menumate/db";
+import { getCurrentUser, getRestaurantForAdminUser } from "@/lib/auth";
 
 const updateOrderSchema = z.object({
   status: z.enum(["pending", "cooking", "ready", "served", "paid", "cancelled"]),
@@ -30,13 +30,8 @@ export async function PATCH(
       return errorResponse("Super admins cannot update orders", 403);
     }
 
-    // Get user's restaurant
-    const [restaurant] = await db
-      .select()
-      .from(restaurants)
-      .where(eq(restaurants.ownerId, user.userId))
-      .limit(1);
-
+    // Get user's restaurant (owner or staff)
+    const restaurant = await getRestaurantForAdminUser(user);
     if (!restaurant) {
       return notFoundResponse("Restaurant not found");
     }

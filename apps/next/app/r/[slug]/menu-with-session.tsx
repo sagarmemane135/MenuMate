@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt, AlertCircle } from "lucide-react";
 import { useCart, useToast } from "@menumate/app";
@@ -72,6 +72,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
   }>>([]);
   const [sessionStatus, setSessionStatus] = useState<"active" | "closed" | "paid" | null>(null);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   // Validate phone number (10 digits for Indian numbers)
   const validatePhone = (phone: string): boolean => {
@@ -449,12 +450,19 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     let needsNewSession = false;
     
     if (token) {
-      // Verify the token is for the correct table
+      // Verify the token is for the correct table and session is still active
       try {
         const verifyResponse = await fetch(`/api/sessions/${token}`);
         if (verifyResponse.ok) {
           const verifyData = await verifyResponse.json();
           if (verifyData.success && verifyData.session) {
+            const status = verifyData.session.status as string | undefined;
+            if (status === "closed" || status === "paid") {
+              setSessionStatus(status as "closed" | "paid");
+              showToast("This session is closed or already paid. Create a new session to order.", "error");
+              setIsSendingOrder(false);
+              return;
+            }
             const sessionTable = verifyData.session.tableNumber;
             if (sessionTable !== table) {
               console.log(`[CLIENT] sendToKitchen - Token is for table ${sessionTable}, but current table is ${table}. Creating new session.`);
@@ -592,9 +600,13 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         customerPhone: customerPhone.replace(/\D/g, ""), // Clean phone number
       };
 
+      const idemKey = (idempotencyKeyRef.current = idempotencyKeyRef.current ?? (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `idem-${Date.now()}-${Math.random().toString(36).slice(2)}`));
       const response = await fetch("/api/orders/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idemKey,
+        },
         body: JSON.stringify(orderBody),
       });
 
@@ -632,6 +644,7 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
         clearCart();
         setShowCustomerForm(false);
         setShowCart(false);
+        idempotencyKeyRef.current = null;
         // Don't clear customerName and customerPhone - keep them for next order
         // Keep the page open to show order status updates
       } else {

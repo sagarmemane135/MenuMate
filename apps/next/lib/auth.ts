@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { db, users, eq } from "@menumate/db";
+import { db, users, restaurants, restaurantStaff, eq } from "@menumate/db";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "super_secret_dev_key_123"
@@ -119,6 +119,35 @@ export async function requireAuth(): Promise<JWTPayload> {
     throw new Error("Unauthorized");
   }
   return user;
+}
+
+/** Resolve restaurant for admin (owner or staff). Owner: by ownerId; staff: by restaurant_staff. */
+export async function getRestaurantForAdminUser(
+  user: JWTPayload
+): Promise<{ id: string; isActive: boolean; slug: string } | null> {
+  if (user.role === "owner") {
+    const [r] = await db
+      .select({ id: restaurants.id, isActive: restaurants.isActive, slug: restaurants.slug })
+      .from(restaurants)
+      .where(eq(restaurants.ownerId, user.userId))
+      .limit(1);
+    return r ?? null;
+  }
+  if (user.role === "staff") {
+    const [s] = await db
+      .select({ restaurantId: restaurantStaff.restaurantId })
+      .from(restaurantStaff)
+      .where(eq(restaurantStaff.userId, user.userId))
+      .limit(1);
+    if (!s) return null;
+    const [r] = await db
+      .select({ id: restaurants.id, isActive: restaurants.isActive, slug: restaurants.slug })
+      .from(restaurants)
+      .where(eq(restaurants.id, s.restaurantId))
+      .limit(1);
+    return r ?? null;
+  }
+  return null;
 }
 
 

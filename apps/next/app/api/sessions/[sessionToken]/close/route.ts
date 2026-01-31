@@ -25,8 +25,15 @@ export async function POST(
 
     if (!session) {
       return NextResponse.json(
-        { error: "Session not found" },
+        { success: false, error: "Session not found or expired." },
         { status: 404 }
+      );
+    }
+
+    if (session.status === "closed" || session.status === "paid") {
+      return NextResponse.json(
+        { success: false, error: "Session is already closed or paid." },
+        { status: 400 }
       );
     }
 

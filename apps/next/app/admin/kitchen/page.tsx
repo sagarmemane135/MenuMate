@@ -1,5 +1,5 @@
-import { getCurrentUser } from "@/lib/auth";
-import { db, restaurants, orders, eq, and, or, desc } from "@menumate/db";
+import { getCurrentUser, getRestaurantForAdminUser } from "@/lib/auth";
+import { db, orders, eq, and, or, desc } from "@menumate/db";
 import { redirect } from "next/navigation";
 import { KitchenPageClient } from "./kitchen-page-client";
 
@@ -15,15 +15,10 @@ export default async function KitchenPage() {
       redirect("/admin");
     }
 
-    // Get user's restaurant
-    let restaurant = null;
+    // Get user's restaurant (owner by ownerId, staff by restaurant_staff)
+    let restaurant: { id: string; isActive: boolean } | null = null;
     try {
-      const [restaurantData] = await db
-        .select()
-        .from(restaurants)
-        .where(eq(restaurants.ownerId, user.userId))
-        .limit(1);
-      restaurant = restaurantData;
+      restaurant = await getRestaurantForAdminUser(user);
     } catch (error) {
       console.error("Error fetching restaurant:", error);
       return (

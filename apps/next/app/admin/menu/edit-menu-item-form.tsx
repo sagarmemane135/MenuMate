@@ -98,12 +98,12 @@ export function EditMenuItemForm({
   };
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-card shadow-card">
-      <div className="px-6 py-4 border-b border-neutral-200">
+    <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50">
         <h2 className="text-base font-semibold text-neutral-900">Edit Menu Item</h2>
       </div>
       
-      <div className="p-6">
+      <div className="p-5">
         {error && (
           <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-lg">
             <p className="text-sm text-error-700">{error}</p>
@@ -186,10 +186,10 @@ export function EditMenuItemForm({
             <Button
               type="button"
               variant="danger"
+              size="sm"
               onClick={handleDelete}
               disabled={isLoading || isDeleting}
               isLoading={isDeleting}
-              className="bg-error-600 hover:bg-error-700 text-white"
             >
               Delete
             </Button>
@@ -197,13 +197,13 @@ export function EditMenuItemForm({
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={onCancel}
                 disabled={isLoading || isDeleting}
-                className="btn-secondary"
               >
                 Cancel
               </Button>
-              <Button type="submit" isLoading={isLoading} className="btn-primary">
+              <Button type="submit" isLoading={isLoading} size="sm">
                 Save Changes
               </Button>
             </div>
