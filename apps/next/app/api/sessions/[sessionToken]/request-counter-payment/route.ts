@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, tableSessions, restaurants, eq } from "@menumate/db";
-import { emitCounterPaymentRequested } from "@/lib/websocket-events";
 
 export async function POST(
   request: NextRequest,
@@ -45,15 +44,6 @@ export async function POST(
       })
       .where(eq(tableSessions.id, session.id))
       .returning();
-
-    // Emit WebSocket event to notify admin
-    await emitCounterPaymentRequested(session.restaurantId, {
-      sessionId: session.id,
-      sessionToken: sessionToken,
-      tableNumber: session.tableNumber,
-      totalAmount: session.totalAmount,
-      requestedAt: new Date().toISOString(),
-    });
 
     return NextResponse.json({
       success: true,

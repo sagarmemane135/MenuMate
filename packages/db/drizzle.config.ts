@@ -5,7 +5,7 @@ export default {
   out: "./drizzle",
   driver: "pg",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/menumate",
+    connectionString: process.env.DATABASE_URL || "postgresql://admin:admin123@localhost:5432/mydb",
   },
 } satisfies Config;
 

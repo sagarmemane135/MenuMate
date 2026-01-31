@@ -8,7 +8,9 @@
     "generate": "drizzle-kit generate:pg",
     "studio": "drizzle-kit studio",
     "migrate:served": "tsx scripts/add-served-status.ts",
-    "enable:rls": "tsx scripts/enable-rls.ts"
+    "enable:rls": "tsx scripts/enable-rls.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "create-super-admin": "tsx scripts/create-super-admin.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

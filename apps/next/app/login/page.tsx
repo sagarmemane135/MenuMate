@@ -90,10 +90,16 @@ function LoginPageContent() {
       }
 
       setIsLoading(false);
-      showToast("Registration successful! Your account is pending approval.", "success");
+      showToast("Registration successful! MenuMate admin will review your request—you can log in after approval.", "success");
+      // Clear signup form and switch to login form (we're already on /login page)
+      setRegisterEmail("");
+      setRegisterPassword("");
+      setFullName("");
+      setRestaurantName("");
+      setError(null);
       setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+        setIsLogin(true);
+      }, 800);
     } catch (err) {
       setError("An unexpected error occurred");
       setIsLoading(false);
@@ -233,6 +239,9 @@ function LoginPageContent() {
             >
               {isLoading ? "Creating account..." : "Create Account"}
             </Button>
+            <p className="mt-3 text-xs text-slate-500 text-center">
+              Restaurant accounts require approval by MenuMate admin before you can log in.
+            </p>
           </form>
         )}
 

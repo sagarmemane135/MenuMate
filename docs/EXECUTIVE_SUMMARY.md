@@ -21,13 +21,13 @@
 - ✅ **Bill/Invoice System** - Consolidated bills per table session
 - ✅ **Order Management** - Track orders from Pending → Cooking → Ready → Served → Paid
 - ✅ **Kitchen Display System (KDS)** - Real-time order tracking with status updates
-- ✅ **Real-Time Notifications** - WebSocket-based instant notifications (Pusher)
+- ✅ **Live Updates** - Polling-based updates for orders and sessions (no external services)
 - ✅ **Table Session Management** - View and manage all active table sessions
 - ✅ **Counter Payment Tracking** - Track and manage counter payments with notifications
 - ✅ **Real-Time Order Status** - Customers see order status updates instantly
 - ✅ **Multi-Restaurant Platform** - Platform admin + restaurant owner roles
 - ✅ **Mobile-First** - Fully responsive, optimized for all devices
-- ✅ **Cloud Database** - Supabase PostgreSQL for production
+- ✅ **Local Database** - PostgreSQL (e.g. Docker) for development and self-hosted
 - ✅ **Production Deployment** - Deployed on Vercel
 
 ### What We're Building Next (Next 2-3 Months)

@@ -83,13 +83,14 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    // Restaurant stays inactive until MenuMate admin approves the owner
     const [newRestaurant] = await db
       .insert(restaurants)
       .values({
         ownerId: newUser.id,
         name: validatedData.restaurantName,
         slug,
-        isActive: true,
+        isActive: false,
       })
       .returning();
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
           slug: newRestaurant.slug,
         },
       },
-      "Registration successful. Your account is pending approval."
+      "Registration successful. A MenuMate admin will review your request. You can log in after approval."
     );
 
     // Set cookie in response using NextResponse.cookies (proper Next.js 15 way)

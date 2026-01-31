@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { UtensilsCrossed, CheckCircle2, ImageOff, ShoppingCart, Send, Plus, Minus, X, Receipt, AlertCircle } from "lucide-react";
 import { useCart, useToast } from "@menumate/app";
 import { Button } from "@menumate/app";
-import { usePusherChannel } from "@/lib/pusher-client";
+import { usePolling } from "@/lib/use-polling";
 
 interface Category {
   id: string;
@@ -281,47 +281,20 @@ export function MenuWithSession({ restaurant, categories, menuItems }: MenuWithS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableNumber, restaurant.slug]);
 
-  // Listen for order status updates via WebSocket
-  const channelName = sessionToken ? `session-${sessionToken}` : null;
-  
-  usePusherChannel(
-    channelName,
-    "order:status:updated",
-    (data: unknown) => {
-      const eventData = data as { orderId: string; status: string; tableNumber?: string };
-      
-      // Update recent orders list
-      setRecentOrders((prev) =>
-        prev.map((order) =>
-          order.id === eventData.orderId
-            ? { ...order, status: eventData.status }
-            : order
-        )
+  // Poll session for order status updates (local setup)
+  usePolling<{ success: boolean; session?: { status: string }; orders?: Array<{ id: string; status: string; createdAt: string }> }>(
+    sessionToken ? `/api/sessions/${sessionToken}` : null,
+    5000,
+    (data) => {
+      if (!data.success || !data.orders) return;
+      if (data.session) setSessionStatus(data.session.status as "active" | "closed" | "paid" | null);
+      setRecentOrders(
+        data.orders.map((o) => ({
+          id: o.id,
+          status: o.status,
+          createdAt: typeof o.createdAt === "string" ? o.createdAt : new Date(o.createdAt).toISOString(),
+        }))
       );
-
-      const statusMessages: Record<string, string> = {
-        pending: "Order received! 📝",
-        cooking: "Your order is being prepared! 👨‍🍳",
-        ready: "Your order is ready! 🎉",
-        paid: "Payment received! Thank you! ✅",
-        cancelled: "Order cancelled ❌",
-      };
-
-      if (statusMessages[eventData.status]) {
-        showToast(statusMessages[eventData.status], "info");
-      }
-    }
-  );
-
-  // Listen for new orders created
-  usePusherChannel(
-    sessionToken ? `session-${sessionToken}` : null,
-    "order:created",
-    (data: unknown) => {
-      const eventData = data as { order: { id: string; status: string; createdAt: string } };
-      if (eventData.order) {
-        setRecentOrders((prev) => [eventData.order, ...prev]);
-      }
     }
   );
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, tableSessions, orders, eq, sql } from "@menumate/db";
+import { db, tableSessions, orders, eq } from "@menumate/db";
 import { z } from "zod";
-import { emitSessionClosed } from "@/lib/websocket-events";
 
 const closeSessionSchema = z.object({
   paymentMethod: z.enum(["online", "counter", "split"]),
@@ -67,15 +66,6 @@ export async function POST(
         })
         .where(eq(orders.sessionId, session.id));
     }
-
-    // Emit WebSocket event to notify all users with this session
-    await emitSessionClosed(session.restaurantId, sessionToken, {
-      sessionId: session.id,
-      tableNumber: session.tableNumber,
-      status: paymentMethod === "online" ? "paid" : "closed",
-      totalAmount: totalAmount.toString(),
-      paymentMethod,
-    });
 
     return NextResponse.json({
       success: true,

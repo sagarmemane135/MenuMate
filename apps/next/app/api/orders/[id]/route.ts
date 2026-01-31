@@ -7,9 +7,8 @@ import {
   internalErrorResponse,
 } from "@/lib/api-response";
 import { z } from "zod";
-import { db, orders, restaurants, tableSessions, eq } from "@menumate/db";
+import { db, orders, restaurants, eq } from "@menumate/db";
 import { getCurrentUser } from "@/lib/auth";
-import { emitOrderStatusUpdated } from "@/lib/websocket-events";
 
 const updateOrderSchema = z.object({
   status: z.enum(["pending", "cooking", "ready", "served", "paid", "cancelled"]),
@@ -61,28 +60,6 @@ export async function PATCH(
       .set({ status: validatedData.status })
       .where(eq(orders.id, id))
       .returning();
-
-    // Get session token if order has a session
-    let sessionToken: string | null = null;
-    if (updatedOrder.sessionId) {
-      const [session] = await db
-        .select()
-        .from(tableSessions)
-        .where(eq(tableSessions.id, updatedOrder.sessionId))
-        .limit(1);
-      sessionToken = session?.sessionToken || null;
-    }
-
-    // Emit WebSocket events for real-time updates
-    await emitOrderStatusUpdated(
-      updatedOrder.restaurantId,
-      sessionToken,
-      {
-        orderId: updatedOrder.id,
-        status: updatedOrder.status,
-        tableNumber: updatedOrder.tableNumber,
-      }
-    );
 
     return successResponse(
       { order: updatedOrder },

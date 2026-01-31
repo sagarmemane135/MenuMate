@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Card, Button, useToast } from "@menumate/app";
-import { useRealtime } from "@/lib/use-realtime";
+import { useState, useRef } from "react";
+import { Button, useToast } from "@menumate/app";
+import { usePolling } from "@/lib/use-polling";
 import { formatIndianDateTime } from "@/lib/date-utils";
+import { ClipboardList, Clock, Flame, CheckCircle, DollarSign } from "lucide-react";
 
 interface Order {
   id: string;
@@ -41,59 +42,24 @@ const statusOptions: Array<{ value: Order["status"]; label: string }> = [
 export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClientProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [lastPoll, setLastPoll] = useState<string>(new Date().toISOString());
   const { showToast } = useToast();
+  const prevCountRef = useRef(initialOrders.length);
 
-  // Listen for new orders (Pusher or polling)
-  useRealtime({
-    channelName: `restaurant-${restaurantId}`,
-    eventName: "order:created",
-    callback: (data: unknown) => {
-      const eventData = data as { 
-        order: {
-          id: string;
-          tableNumber: string | null;
-          status: string;
-          totalAmount: string;
-          createdAt: Date | string;
-          sessionId?: string | null;
-          isPaid?: boolean;
-        };
-        session: { id: string; tableNumber: string };
-      };
-      const newOrder: Order = {
-        id: eventData.order.id,
-        tableNumber: eventData.order.tableNumber,
-        status: eventData.order.status as Order["status"],
-        totalAmount: eventData.order.totalAmount,
-        createdAt: eventData.order.createdAt,
-        sessionId: eventData.order.sessionId || null,
-        isPaid: eventData.order.isPaid || false,
-      };
-      setOrders((prev) => [newOrder, ...prev]);
-      showToast("New order received! 🎉", "info");
-    },
-    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}&since=${lastPoll}`,
-    pollingInterval: 5000,
-  });
-
-  // Listen for order status updates (Pusher or polling)
-  useRealtime({
-    channelName: `restaurant-${restaurantId}`,
-    eventName: "order:status:updated",
-    callback: (data: unknown) => {
-      const eventData = data as { orderId: string; status: string };
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === eventData.orderId
-            ? { ...order, status: eventData.status as Order["status"] }
-            : order
-        )
-      );
-    },
-    pollingUrl: `/api/realtime/orders?restaurantId=${restaurantId}`,
-    pollingInterval: 5000,
-  });
+  // Poll for order updates (local setup)
+  usePolling<{ data: Order[] }>(
+    `/api/realtime/orders?restaurantId=${restaurantId}`,
+    5000,
+    (res) => {
+      if (res.data && Array.isArray(res.data)) {
+        const newCount = res.data.length;
+        if (newCount > prevCountRef.current) {
+          showToast("New order received! 🎉", "info");
+        }
+        prevCountRef.current = newCount;
+        setOrders(res.data as Order[]);
+      }
+    }
+  );
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingOrderId(orderId);
@@ -143,44 +109,88 @@ export function OrdersPageClient({ initialOrders, restaurantId }: OrdersPageClie
         <p className="mt-1 text-sm text-neutral-600">Real-time order tracking and management</p>
       </div>
 
-      {/* Stats Overview */}
+      {/* Stats Overview - same alignment as admin dashboard */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="stat-card">
-          <div className="text-xs text-neutral-600 font-medium mb-1">Total Orders</div>
-          <div className="text-2xl font-semibold text-neutral-900">{stats.total}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Total Orders</p>
+              <p className="stat-value min-h-[2.25rem] flex items-center">{stats.total}</p>
+              <p className="stat-change">All orders</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <ClipboardList className="w-5 h-5 text-neutral-600" />
+            </div>
+          </div>
         </div>
         <div className="stat-card">
-          <div className="text-xs text-warning-600 font-medium mb-1">Pending</div>
-          <div className="text-2xl font-semibold text-warning-600">{stats.pending}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Pending</p>
+              <p className="stat-value text-warning-600 min-h-[2.25rem] flex items-center">{stats.pending}</p>
+              <p className="stat-change">Awaiting</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-warning-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Clock className="w-5 h-5 text-warning-600" />
+            </div>
+          </div>
         </div>
         <div className="stat-card">
-          <div className="text-xs text-primary-600 font-medium mb-1">Cooking</div>
-          <div className="text-2xl font-semibold text-primary-600">{stats.cooking}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Cooking</p>
+              <p className="stat-value text-primary-600 min-h-[2.25rem] flex items-center">{stats.cooking}</p>
+              <p className="stat-change">In kitchen</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Flame className="w-5 h-5 text-primary-600" />
+            </div>
+          </div>
         </div>
         <div className="stat-card">
-          <div className="text-xs text-success-600 font-medium mb-1">Ready</div>
-          <div className="text-2xl font-semibold text-success-600">{stats.ready}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Ready</p>
+              <p className="stat-value text-success-600 min-h-[2.25rem] flex items-center">{stats.ready}</p>
+              <p className="stat-change">To serve</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CheckCircle className="w-5 h-5 text-success-600" />
+            </div>
+          </div>
         </div>
         <div className="stat-card">
-          <div className="text-xs text-neutral-600 font-medium mb-1">Total Revenue</div>
-          <div className="text-2xl font-semibold text-neutral-900">₹{totalRevenue.toFixed(0)}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Total Revenue</p>
+              <p className="stat-value min-h-[2.25rem] flex items-center">₹{totalRevenue.toFixed(0)}</p>
+              <p className="stat-change">From orders</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <DollarSign className="w-5 h-5 text-success-600" />
+            </div>
+          </div>
         </div>
       </div>
 
       {orders.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="text-center py-12 px-4">
+            <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+              <ClipboardList className="w-6 h-6 text-neutral-400" />
+            </div>
+            <p className="text-sm font-medium text-neutral-600">No orders yet</p>
+            <p className="text-xs text-neutral-500 mt-1">Orders will appear here when customers place them</p>
           </div>
-          <p className="text-sm font-medium text-neutral-900 mb-1">No orders yet</p>
-          <p className="text-xs text-neutral-500">Orders will appear here when customers place them</p>
         </div>
       ) : (
-        <div className="bg-white border border-neutral-200 rounded-card shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="table-professional">
+        <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50">
+            <h2 className="text-sm font-semibold text-neutral-900">All orders</h2>
+            <p className="text-xs text-neutral-500 mt-0.5">Update status from the dropdown</p>
+          </div>
+          <div className="w-full overflow-x-auto -mx-1">
+            <table className="table-professional w-full">
               <thead>
                 <tr>
                   <th>Order ID</th>

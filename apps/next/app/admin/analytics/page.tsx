@@ -30,6 +30,7 @@ export default async function AnalyticsPage() {
   }
 
   const restaurant = userRestaurants[0];
+  // Inactive restaurant: layout shows subscription-expired content
   const subscriptionTier = user.subscriptionTier ? String(user.subscriptionTier) : "free";
   const userName = user.fullName ? String(user.fullName) : "User";
 

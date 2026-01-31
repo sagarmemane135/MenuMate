@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button, useToast } from "@menumate/app";
 import { Receipt, CreditCard, Store, Users, ArrowLeft, Loader2 } from "lucide-react";
 import type { RazorpayPaymentResponse, RazorpayCheckoutOptions } from "@/lib/types/razorpay";
-import { usePusherChannel } from "@/lib/pusher-client";
 import { formatIndianTime } from "@/lib/date-utils";
 
 interface OrderItem {
@@ -53,50 +52,31 @@ function BillPageContent() {
     }
   }, [sessionToken]);
 
-  // Listen for order status updates via WebSocket
-  usePusherChannel(
-    sessionToken ? `session-${sessionToken}` : null,
-    "order:status:updated",
-    (data: unknown) => {
-      const eventData = data as { orderId: string; status: string };
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === eventData.orderId
-            ? { ...order, status: eventData.status }
-            : order
-        )
-      );
-
-      // Show notification
-      if (eventData.status === "ready") {
-        showToast("One of your orders is ready! 🎉", "success");
-      }
-    }
-  );
-
-  // Listen for counter payment confirmation
-  usePusherChannel(
-    sessionToken ? `session-${sessionToken}` : null,
-    "payment:counter:received",
-    (data: unknown) => {
-      const eventData = data as { sessionId: string; tableNumber: string; totalAmount: string };
-      showToast("Payment received! Thank you! ✅", "success");
-      // Update session status
-      if (session) {
-        setSession({ ...session, status: "paid", paymentStatus: "paid" });
-      }
-      // Clear session from localStorage
-      if (sessionToken) {
-        localStorage.removeItem(`session_${sessionToken}`);
-        const masterKey = `active_session_${sessionToken.split('_')[0]}`;
-        localStorage.removeItem(masterKey);
-      }
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
-    }
-  );
+  // Poll session for updates (local setup) - order status and payment confirmation
+  useEffect(() => {
+    if (!sessionToken) return;
+    const interval = setInterval(() => {
+      fetch(`/api/sessions/${sessionToken}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.session) {
+            setSession(data.session);
+            setOrders(data.orders || []);
+            if (data.session.status === "paid") {
+              showToast("Payment received! Thank you! ✅", "success");
+              if (sessionToken) {
+                localStorage.removeItem(`session_${sessionToken}`);
+                const masterKey = `active_session_${sessionToken.split("_")[0]}`;
+                localStorage.removeItem(masterKey);
+              }
+              setTimeout(() => router.push("/"), 2000);
+            }
+          }
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [sessionToken, router, showToast]);
 
   const fetchSessionData = async () => {
     if (!sessionToken) return;

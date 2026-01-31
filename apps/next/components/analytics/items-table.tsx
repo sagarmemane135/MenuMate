@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@menumate/app";
 import { TrendingUp, TrendingDown, Award, AlertCircle } from "lucide-react";
 
 interface ItemData {
@@ -78,8 +77,8 @@ export function ItemsTable({ data }: { data: ItemData }) {
         </button>
       </div>
 
-      {/* Content */}
-      <Card className="overflow-hidden">
+      {/* Content - consistent card style */}
+      <div className="border border-neutral-200 rounded-xl overflow-hidden bg-white">
         {activeTab === "top" && (
           <div className="p-6 space-y-6">
             {/* By Quantity */}
@@ -219,7 +218,7 @@ export function ItemsTable({ data }: { data: ItemData }) {
             )}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

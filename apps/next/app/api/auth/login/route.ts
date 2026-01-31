@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid email or password", 401);
     }
 
-    // Check status - if pending, return 403
+    // Check status - restaurant owners need MenuMate admin approval before they can log in
     if (user.status === "pending") {
       return errorResponse(
         "Account Under Review",
         403,
-        "Your account is pending approval. Please wait for admin approval."
+        "Your account is pending approval by MenuMate admin. You will be able to log in once approved."
       );
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         "Account Rejected",
         403,
-        "Your account has been rejected. Please contact support."
+        "Your account has been rejected. Please contact MenuMate support."
       );
     }
 

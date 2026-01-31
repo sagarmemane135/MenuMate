@@ -1,6 +1,13 @@
 import { pgEnum, pgTable, uuid, text, timestamp, boolean, integer, decimal, index, varchar, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
+// Platform settings (key-value for super admin config, e.g. Pro plan price)
+export const platformSettings = pgTable("platform_settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Enum Types
 export const userRoleEnum = pgEnum("user_role", ["super_admin", "owner", "staff"]);
 export const userStatusEnum = pgEnum("user_status", ["pending", "approved", "rejected"]);
@@ -162,6 +169,8 @@ export const ordersRelations = relations(orders, ({ one }) => ({
 }));
 
 // Type exports
+export type PlatformSetting = typeof platformSettings.$inferSelect;
+export type NewPlatformSetting = typeof platformSettings.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Restaurant = typeof restaurants.$inferSelect;

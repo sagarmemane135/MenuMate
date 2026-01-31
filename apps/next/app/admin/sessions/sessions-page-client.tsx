@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Button, useToast } from "@menumate/app";
+import { Button, useToast } from "@menumate/app";
 import { Users, Calendar, CreditCard, Store, CheckCircle2, Clock, Eye, X, Receipt } from "lucide-react";
 import { formatIndianDateTime } from "@/lib/date-utils";
-import { useRealtime } from "@/lib/use-realtime";
+import { usePolling } from "@/lib/use-polling";
 
 interface Session {
   id: string;
@@ -69,32 +69,16 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
     cleanupInactiveSessions();
   }, []); // Run once on mount
 
-  // Listen for session updates (when orders are added, totals change) - Pusher or polling
-  useRealtime({
-    channelName: `restaurant-${restaurantId}`,
-    eventName: "session:updated",
-    callback: (data: unknown) => {
-      const eventData = data as {
-        sessionId: string;
-        tableNumber: string;
-        totalAmount: string;
-        ordersCount: number;
-      };
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === eventData.sessionId
-            ? {
-                ...session,
-                totalAmount: eventData.totalAmount,
-                ordersCount: eventData.ordersCount,
-              }
-            : session
-        )
-      );
-    },
-    pollingUrl: `/api/realtime/sessions?restaurantId=${restaurantId}`,
-    pollingInterval: 5000,
-  });
+  // Poll for session updates (local setup)
+  usePolling<{ data: Session[] }>(
+    `/api/realtime/sessions?restaurantId=${restaurantId}`,
+    5000,
+    (res) => {
+      if (res.data && Array.isArray(res.data)) {
+        setSessions(res.data);
+      }
+    }
+  );
   const [sessionDetails, setSessionDetails] = useState<{
     session: Session;
     orders: Array<{
@@ -160,83 +144,86 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* Stats - same alignment as admin dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Active Tables</p>
-              <p className="stat-value text-success-600">{stats.active}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Active Tables</p>
+              <p className="stat-value text-success-600 min-h-[2.25rem] flex items-center">{stats.active}</p>
+              <p className="stat-change">Currently dining</p>
             </div>
-            <div className="w-12 h-12 rounded-lg bg-success-50 flex items-center justify-center">
-              <Users className="w-6 h-6 text-success-600" />
+            <div className="w-11 h-11 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Users className="w-5 h-5 text-success-600" />
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Pay at Counter</p>
-              <p className="stat-value text-warning-600">{stats.closed}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Pay at Counter</p>
+              <p className="stat-value text-warning-600 min-h-[2.25rem] flex items-center">{stats.closed}</p>
+              <p className="stat-change">Awaiting payment</p>
             </div>
-            <div className="w-12 h-12 rounded-lg bg-warning-50 flex items-center justify-center">
-              <Store className="w-6 h-6 text-warning-600" />
+            <div className="w-11 h-11 rounded-xl bg-warning-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Store className="w-5 h-5 text-warning-600" />
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Paid Online</p>
-              <p className="stat-value text-primary-600">{stats.paid}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="stat-label stat-label-fixed-height mb-1">Paid Online</p>
+              <p className="stat-value text-primary-600 min-h-[2.25rem] flex items-center">{stats.paid}</p>
+              <p className="stat-change">Completed</p>
             </div>
-            <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-primary-600" />
+            <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CheckCircle2 className="w-5 h-5 text-primary-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
+      {/* Filter - consistent pill style, selected = tint + border */}
+      <div className="flex space-x-2 mb-5 overflow-x-auto pb-2">
         <button
           onClick={() => setFilter("all")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
             filter === "all"
-              ? "bg-primary-600 text-white"
-              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+              ? "bg-primary-50 text-primary-700 border-primary-200"
+              : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
           }`}
         >
           All ({sessions.length})
         </button>
         <button
           onClick={() => setFilter("active")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
             filter === "active"
-              ? "bg-success-600 text-white"
-              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+              ? "bg-success-50 text-success-700 border-success-200"
+              : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
           }`}
         >
           Active ({stats.active})
         </button>
         <button
           onClick={() => setFilter("closed")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
             filter === "closed"
-              ? "bg-warning-600 text-white"
-              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+              ? "bg-warning-50 text-warning-700 border-warning-200"
+              : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
           }`}
         >
           Counter ({stats.closed})
         </button>
         <button
           onClick={() => setFilter("paid")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
             filter === "paid"
-              ? "bg-primary-600 text-white"
-              : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+              ? "bg-primary-50 text-primary-700 border-primary-200"
+              : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
           }`}
         >
           Paid ({stats.paid})
@@ -245,21 +232,27 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
 
         {/* Sessions List */}
         {filteredSessions.length === 0 ? (
-          <div className="bg-white border border-neutral-200 rounded-card shadow-card p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-neutral-400" />
+          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="text-center py-12 px-4">
+              <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+                <Users className="w-6 h-6 text-neutral-400" />
+              </div>
+              <p className="text-sm font-medium text-neutral-600">
+                {filter === "all" ? "No table sessions yet" : `No ${filter} sessions`}
+              </p>
+              <p className="text-xs text-neutral-500 mt-1">
+                {filter === "all" ? "Sessions will appear when customers start dining" : "Try another filter"}
+              </p>
             </div>
-            <h3 className="text-base font-semibold text-neutral-900 mb-1">No Sessions</h3>
-            <p className="text-sm text-neutral-600">
-              {filter === "all"
-                ? "No table sessions yet"
-                : `No ${filter} sessions`}
-            </p>
           </div>
         ) : (
-          <div className="bg-white border border-neutral-200 rounded-card shadow-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="table-professional">
+          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50">
+              <h2 className="text-sm font-semibold text-neutral-900">All sessions</h2>
+              <p className="text-xs text-neutral-500 mt-0.5">View details or filter by status above</p>
+            </div>
+            <div className="w-full overflow-x-auto -mx-1">
+              <table className="table-professional w-full">
                 <thead>
                   <tr>
                     <th>Table</th>
@@ -376,60 +369,60 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
             className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Table {sessionDetails.session.tableNumber} - Session Details
+                <h2 className="text-lg font-semibold text-neutral-900">
+                  Table {sessionDetails.session.tableNumber} — Session details
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-neutral-600 mt-0.5">
                   Started: {formatIndianDateTime(sessionDetails.session.startedAt)}
                 </p>
               </div>
               <button
                 onClick={closeSessionModal}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
               >
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-5 h-5 text-neutral-600" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-5 space-y-5">
               {/* Session Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Session Information</h3>
+              <div className="bg-neutral-50 rounded-xl border border-neutral-100 p-4">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">Session information</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-600">Status</p>
-                    <p className="font-semibold text-gray-900 capitalize">{sessionDetails.session.status}</p>
+                    <p className="text-neutral-500">Status</p>
+                    <p className="font-medium text-neutral-900 capitalize">{sessionDetails.session.status}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Total Amount</p>
-                    <p className="font-semibold text-neutral-900">₹{Number(sessionDetails.session.totalAmount).toFixed(2)}</p>
+                    <p className="text-neutral-500">Total amount</p>
+                    <p className="font-medium text-neutral-900">₹{Number(sessionDetails.session.totalAmount).toFixed(2)}</p>
                   </div>
                   {sessionDetails.session.customerName && (
                     <div>
-                      <p className="text-gray-600">Customer Name</p>
-                      <p className="font-semibold text-gray-900">{sessionDetails.session.customerName}</p>
+                      <p className="text-neutral-500">Customer name</p>
+                      <p className="font-medium text-neutral-900">{sessionDetails.session.customerName}</p>
                     </div>
                   )}
                   {sessionDetails.session.customerPhone && (
                     <div>
-                      <p className="text-gray-600">Customer Phone</p>
-                      <p className="font-semibold text-gray-900">{sessionDetails.session.customerPhone}</p>
+                      <p className="text-neutral-500">Customer phone</p>
+                      <p className="font-medium text-neutral-900">{sessionDetails.session.customerPhone}</p>
                     </div>
                   )}
                   {sessionDetails.session.paymentMethod && sessionDetails.session.paymentMethod !== "pending" && (
                     <div>
-                      <p className="text-gray-600">Payment Method</p>
-                      <p className="font-semibold text-gray-900 capitalize">
+                      <p className="text-neutral-500">Payment method</p>
+                      <p className="font-medium text-neutral-900 capitalize">
                         {sessionDetails.session.paymentMethod === "online" ? "Online" : "Counter"}
                       </p>
                     </div>
                   )}
                   {sessionDetails.session.paymentStatus && sessionDetails.session.paymentStatus !== "pending" && (
                     <div>
-                      <p className="text-gray-600">Payment Status</p>
-                      <p className="font-semibold text-gray-900 capitalize">{sessionDetails.session.paymentStatus}</p>
+                      <p className="text-neutral-500">Payment status</p>
+                      <p className="font-medium text-neutral-900 capitalize">{sessionDetails.session.paymentStatus}</p>
                     </div>
                   )}
                 </div>
@@ -437,54 +430,52 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
 
               {/* Orders List */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Receipt className="w-5 h-5" />
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+                  <Receipt className="w-4 h-4" />
                   Orders ({sessionDetails.orders.length})
                 </h3>
                 {sessionDetails.orders.length === 0 ? (
-                  <Card>
-                    <p className="text-gray-600 text-center py-8">No orders in this session</p>
-                  </Card>
+                  <div className="bg-white border border-neutral-200 rounded-xl p-6 text-center">
+                    <p className="text-sm text-neutral-500">No orders in this session</p>
+                  </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {sessionDetails.orders.map((order, index) => (
-                      <Card key={order.id}>
+                      <div key={order.id} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-3">
                             <div>
-                              <h4 className="font-semibold text-gray-900">Order #{index + 1}</h4>
-                              <p className="text-xs text-gray-500">
+                              <h4 className="font-medium text-neutral-900">Order #{index + 1}</h4>
+                              <p className="text-xs text-neutral-500">
                                 {formatIndianDateTime(order.createdAt)}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <span
-                                className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                  order.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : order.status === "cooking"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : order.status === "ready"
-                                    ? "bg-green-100 text-green-800"
-                                    : order.status === "served"
-                                    ? "bg-purple-100 text-purple-800"
-                                    : order.status === "paid"
-                                    ? "bg-gray-100 text-gray-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {order.status.toUpperCase()}
-                              </span>
-                            </div>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                order.status === "pending"
+                                  ? "bg-warning-50 text-warning-700"
+                                  : order.status === "cooking"
+                                  ? "bg-primary-50 text-primary-700"
+                                  : order.status === "ready"
+                                  ? "bg-success-50 text-success-700"
+                                  : order.status === "served"
+                                  ? "bg-neutral-100 text-neutral-700"
+                                  : order.status === "paid"
+                                  ? "bg-neutral-100 text-neutral-700"
+                                  : "bg-error-50 text-error-700"
+                              }`}
+                            >
+                              {order.status}
+                            </span>
                           </div>
 
-                          <div className="space-y-2 mb-3">
+                          <div className="space-y-1.5 mb-3">
                             {(order.items as Array<{ itemId: string; name: string; quantity: number; price: number }>).map((item, idx) => (
                               <div key={idx} className="flex justify-between text-sm">
-                                <span className="text-gray-700">
-                                  {item.quantity}x {item.name}
+                                <span className="text-neutral-600">
+                                  {item.quantity}× {item.name}
                                 </span>
-                                <span className="font-semibold text-gray-900">
+                                <span className="font-medium text-neutral-900">
                                   ₹{(item.price * item.quantity).toFixed(2)}
                                 </span>
                               </div>
@@ -492,19 +483,19 @@ export function SessionsPageClient({ initialSessions, restaurantId }: SessionsPa
                           </div>
 
                           {order.notes && (
-                            <div className="mb-3 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 p-2 rounded">
+                            <div className="mb-3 text-sm text-warning-700 bg-warning-50 border border-warning-200 p-2 rounded-lg">
                               <strong>Note:</strong> {order.notes}
                             </div>
                           )}
 
-                          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                            <span className="text-sm text-gray-600">Order Total</span>
-                            <span className="font-bold text-neutral-900">
+                          <div className="flex justify-between items-center pt-3 border-t border-neutral-100">
+                            <span className="text-sm text-neutral-500">Order total</span>
+                            <span className="font-semibold text-neutral-900">
                               ₹{Number(order.totalAmount).toFixed(2)}
                             </span>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                 )}

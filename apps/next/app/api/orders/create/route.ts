@@ -7,7 +7,6 @@ import {
   validationErrorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
-import { emitOrderCreated } from "@/lib/websocket-events";
 
 const createOrderSchema = z.object({
   sessionToken: z.string(),
@@ -146,56 +145,6 @@ export async function POST(request: NextRequest) {
         totalAmount: sessionTotal.toString(),
       })
       .where(eq(tableSessions.id, session.id));
-
-    // Emit WebSocket event to restaurant room (for kitchen staff)
-    const orderData = {
-      id: newOrder.id,
-      items: newOrder.items as Array<{
-        itemId: string;
-        name: string;
-        quantity: number;
-        price: number;
-      }>,
-      totalAmount: newOrder.totalAmount,
-      status: newOrder.status as "pending" | "cooking" | "ready" | "served" | "paid" | "cancelled",
-      tableNumber: session.tableNumber,
-      customerName: validatedData.customerName,
-      notes: newOrder.notes || null,
-      createdAt: newOrder.createdAt instanceof Date ? newOrder.createdAt.toISOString() : newOrder.createdAt,
-    };
-    
-    
-    await emitOrderCreated(session.restaurantId, {
-      order: orderData,
-      session: {
-        id: session.id,
-        tableNumber: session.tableNumber,
-      },
-    });
-
-    // Also emit to session channel for customer
-    const { emitOrderStatusUpdated, emitSessionUpdated } = await import("@/lib/websocket-events");
-    await emitOrderStatusUpdated(
-      session.restaurantId,
-      session.sessionToken,
-      {
-        orderId: newOrder.id,
-        status: newOrder.status,
-        tableNumber: session.tableNumber,
-      }
-    );
-
-    // Emit session updated event (for sessions page and customer)
-    await emitSessionUpdated(
-      session.restaurantId,
-      session.sessionToken,
-      {
-        sessionId: session.id,
-        tableNumber: session.tableNumber,
-        totalAmount: sessionTotal.toString(),
-        ordersCount: sessionOrders.length,
-      }
-    );
 
     return createdResponse(
       {

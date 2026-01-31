@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { 
   UtensilsCrossed, LayoutDashboard, Menu, Package, UserCheck, 
-  LogOut, X, AlignJustify, Users, ChefHat, Clock, BarChart3 
+  LogOut, X, AlignJustify, Users, ChefHat, Clock, BarChart3, CreditCard 
 } from "lucide-react";
 
 interface AdminNavProps {
@@ -58,6 +58,12 @@ export function AdminNav({ userRole, userEmail }: AdminNavProps) {
       href: "/admin/super",
       label: "User Approvals",
       icon: UserCheck,
+      roles: ["super_admin"]
+    },
+    {
+      href: "/admin/subscriptions",
+      label: "Subscriptions",
+      icon: CreditCard,
       roles: ["super_admin"]
     }
   ];

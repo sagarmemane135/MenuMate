@@ -56,21 +56,26 @@
     @apply hover:bg-neutral-50 transition-colors duration-150;
   }
   
-  /* Professional Stat Cards */
+  /* Professional Stat Cards - fixed alignment */
   .stat-card {
-    @apply bg-white border border-neutral-200 rounded-card p-6 shadow-card;
+    @apply bg-white border border-neutral-200 rounded-card p-5 shadow-card min-h-[120px] flex flex-col;
   }
   
   .stat-value {
-    @apply text-3xl font-semibold text-neutral-900 mt-2;
+    @apply text-3xl font-semibold text-neutral-900 leading-tight tabular-nums;
   }
   
   .stat-label {
     @apply text-sm font-medium text-neutral-600;
   }
+
+  /* Fixed label height so value/change align across cards regardless of title wrap */
+  .stat-label.stat-label-fixed-height {
+    @apply min-h-[2.5rem];
+  }
   
   .stat-change {
-    @apply text-xs text-neutral-500 mt-1;
+    @apply text-xs text-neutral-500 mt-0.5;
   }
 }
 

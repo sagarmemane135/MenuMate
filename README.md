@@ -29,7 +29,7 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 - ✅ **Order Management** - Professional table layout with comprehensive order tracking
 - ✅ **Kitchen Display System (KDS)** - Real-time kanban board (Pending → Cooking → Ready → Served)
 - ✅ **Table Session Management** - Detailed session view with order history
-- ✅ **Real-Time Notifications** - Instant Pusher WebSocket notifications
+- ✅ **Live Updates** - Polling-based updates for orders and sessions (no external services)
 - ✅ **Counter Payment Tracking** - Dedicated notifications and tracking for counter payments
 - ✅ **Session Auto-Cleanup** - Automatic cleanup of inactive sessions (1+ hour)
 - ✅ **Beautiful Dashboard** - Stats cards, QR codes, quick actions
@@ -80,16 +80,13 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 
 4. **Set up environment variables**
    ```bash
-   # Create .env file in apps/next/
-   # Copy from root .env.example or create manually with:
-   # DATABASE_URL, JWT_SECRET, COOKIE_NAME, etc.
-   
-   # Required variables:
-   # DATABASE_URL="postgresql://..."
+   # Copy .env.example to apps/next/.env (or root .env) and set:
+   # DATABASE_URL="postgresql://admin:admin123@localhost:5432/mydb"  # Local Docker Postgres
    # JWT_SECRET="your-secret-key"
    # COOKIE_NAME="menumate_session"
    # NODE_ENV="development"
    ```
+   For local Postgres (Docker): `docker run -d --name postgres-local -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=admin123 -e POSTGRES_DB=mydb -v pgdata:/var/lib/postgresql/data -p 5432:5432 postgres:15`
 
 5. **Run database migrations**
    ```bash
@@ -139,14 +136,14 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 - **Rate Limiting** - API protection
 
 ### Database
-- **PostgreSQL 15** - Relational database (Supabase)
+- **PostgreSQL 15** - Relational database (local or self-hosted)
 - **Drizzle ORM** - Type-safe ORM
 - **Connection Pooling** - Optimized connections
-- **Cloud Database** - Supabase PostgreSQL for production
+- **Database** - PostgreSQL (local Docker or self-hosted)
 - **Migrations** - Version-controlled schema changes
 
 ### Real-Time Communication
-- **Pusher** - Managed WebSocket service for real-time notifications
+- **Polling** - Built-in polling for orders and sessions (no external real-time service)
 - **Real-Time Updates** - Instant order status updates for kitchen and customers
 - **Channel Management** - Restaurant and session-based channels
 - **Optimistic UI Updates** - Immediate feedback for actions
@@ -154,7 +151,7 @@ MenuMate is a modern, cloud-based restaurant management platform that bridges th
 ### Infrastructure
 - **Docker** - Containerization (local development)
 - **Vercel** - Production deployment
-- **Supabase** - Cloud PostgreSQL database
+- **PostgreSQL** - Local or self-hosted database
 - **Turborepo** - Monorepo management
 - **npm Workspaces** - Package management
 
@@ -248,7 +245,7 @@ MenuMate2/
 - Session persistence across page refreshes
 
 ### ✅ Phase 3 - Real-Time Features (Complete)
-- WebSocket-based real-time notifications (Pusher)
+- Polling-based live updates for orders and sessions
 - Kitchen Display System (KDS) with real-time updates (4 columns: Pending, Cooking, Ready, Served)
 - Real-time order status updates for customers with toast notifications
 - Counter payment notifications with persistent alerts

@@ -1,9 +1,10 @@
 /**
- * Polling endpoint for orders (fallback when Pusher is not available)
- * Returns empty array - polling is a basic fallback, Pusher is the primary method
+ * Polling endpoint for orders (local setup - no Pusher).
+ * Returns orders for the restaurant so admin/kitchen can poll for updates.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { db, orders, eq } from "@menumate/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,16 +18,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Return empty data - this is just a fallback
-    // The real implementation would query the database
+    const allOrders = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.restaurantId, restaurantId))
+      .limit(100);
+
+    const sorted = allOrders.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const data = sorted.map((o) => ({
+      id: o.id,
+      tableNumber: o.tableNumber,
+      status: o.status,
+      totalAmount: o.totalAmount,
+      createdAt: o.createdAt,
+      sessionId: o.sessionId,
+      isPaid: o.isPaid,
+      items: o.items,
+      customerName: o.customerName,
+      notes: o.notes,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: [],
+      data,
       timestamp: new Date().toISOString(),
-      message: "Polling fallback - no new data",
     });
   } catch (error) {
-    console.error("[POLLING] Failed to fetch orders:", error);
+    console.error("[REALTIME ORDERS] Failed to fetch orders:", error);
     return NextResponse.json(
       { error: "Failed to fetch orders" },
       { status: 500 }

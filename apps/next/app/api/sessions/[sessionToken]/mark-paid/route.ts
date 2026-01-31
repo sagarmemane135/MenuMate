@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, tableSessions, orders, restaurants, eq } from "@menumate/db";
 import { getCurrentUser } from "@/lib/auth";
-import { emitCounterPaymentReceived, emitSessionClosed } from "@/lib/websocket-events";
 
 export async function POST(
   request: NextRequest,
@@ -87,23 +86,6 @@ export async function POST(
         status: "paid",
       })
       .where(eq(orders.sessionId, session.id));
-
-    // Emit WebSocket event to notify customer
-    await emitCounterPaymentReceived(session.restaurantId, sessionToken, {
-      sessionId: session.id,
-      tableNumber: session.tableNumber,
-      totalAmount: session.totalAmount,
-      paidAt: new Date().toISOString(),
-    });
-
-    // Also emit session closed event
-    await emitSessionClosed(session.restaurantId, sessionToken, {
-      sessionId: session.id,
-      tableNumber: session.tableNumber,
-      status: "paid",
-      totalAmount: session.totalAmount,
-      paymentMethod: "counter",
-    });
 
     return NextResponse.json({
       success: true,

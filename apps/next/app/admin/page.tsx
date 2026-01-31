@@ -1,10 +1,26 @@
 import { getCurrentUser } from "@/lib/auth";
 import { db, restaurants, users, orders, eq, and, gte } from "@menumate/db";
-import { Card } from "@menumate/app";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { DashboardClient } from "./dashboard-client";
-import { Users, CheckCircle, Clock, UtensilsCrossed, ClipboardList, BarChart3 } from "lucide-react";
+import { SuperAdminRestaurantsTable } from "./super-admin-restaurants-table";
+import { Users, CheckCircle, Clock, UtensilsCrossed, ClipboardList } from "lucide-react";
+
+async function setRestaurantInactive(restaurantId: string) {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
+  await db.update(restaurants).set({ isActive: false }).where(eq(restaurants.id, restaurantId));
+  revalidatePath("/admin");
+}
+
+async function setRestaurantActive(restaurantId: string) {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user || user.role !== "super_admin") throw new Error("Unauthorized");
+  await db.update(restaurants).set({ isActive: true }).where(eq(restaurants.id, restaurantId));
+  revalidatePath("/admin");
+}
 
 export default async function AdminDashboard() {
   try {
@@ -30,6 +46,8 @@ export default async function AdminDashboard() {
           .limit(1);
 
         restaurant = restaurantData;
+
+        // Inactive restaurant: layout shows subscription-expired content (no redirect to avoid NEXT_REDIRECT)
 
         // Fetch active sessions for this restaurant
         if (restaurant) {
@@ -234,172 +252,93 @@ export default async function AdminDashboard() {
 
         {user.role === "super_admin" ? (
         <div className="space-y-6">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Stats: uniform alignment and height */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="stat-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="stat-label">Restaurant Admins</p>
-                  <p className="stat-value">{stats?.totalRestaurantAdmins || 0}</p>
-                  <p className="stat-change">Total registered</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-neutral-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="stat-label">Approved Admins</p>
-                  <p className="stat-value text-success-600">{stats?.approvedRestaurantAdmins || 0}</p>
-                  <p className="stat-change">Active restaurant admins</p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-success-50 flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-success-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="stat-label">Pending Approvals</p>
-                  <p className="stat-value text-warning-600">{stats?.pendingRestaurantAdmins || 0}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="stat-label stat-label-fixed-height mb-1">Pending approvals</p>
+                  <p className="stat-value text-warning-600 min-h-[2.25rem] flex items-center">{stats?.pendingRestaurantAdmins ?? 0}</p>
                   <p className="stat-change">Awaiting review</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-warning-50 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-warning-600" />
+                <div className="w-11 h-11 rounded-xl bg-warning-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Clock className="w-5 h-5 text-warning-600" />
                 </div>
               </div>
             </div>
-            
             <div className="stat-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="stat-label">Total Restaurants</p>
-                  <p className="stat-value text-primary-600">{stats?.totalRestaurants || 0}</p>
-                  <p className="stat-change">{stats?.activeRestaurants || 0} active</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="stat-label stat-label-fixed-height mb-1">Approved admins</p>
+                  <p className="stat-value text-success-600 min-h-[2.25rem] flex items-center">{stats?.approvedRestaurantAdmins ?? 0}</p>
+                  <p className="stat-change">Can log in</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center">
-                  <UtensilsCrossed className="w-6 h-6 text-primary-600" />
+                <div className="w-11 h-11 rounded-xl bg-success-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="w-5 h-5 text-success-600" />
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="stat-label stat-label-fixed-height mb-1">Total admins</p>
+                  <p className="stat-value min-h-[2.25rem] flex items-center">{stats?.totalRestaurantAdmins ?? 0}</p>
+                  <p className="stat-change">Registered</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Users className="w-5 h-5 text-neutral-600" />
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="stat-label stat-label-fixed-height mb-1">Restaurants</p>
+                  <p className="stat-value text-primary-600 min-h-[2.25rem] flex items-center">
+                    <span>{stats?.activeRestaurants ?? 0}</span>
+                    <span className="text-lg font-normal text-neutral-400 ml-0.5">/ {stats?.totalRestaurants ?? 0}</span>
+                  </p>
+                  <p className="stat-change">Active / total</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <UtensilsCrossed className="w-5 h-5 text-primary-600" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white border border-neutral-200 rounded-card shadow-card">
-            <div className="px-6 py-4 border-b border-neutral-200">
-              <h2 className="text-base font-semibold text-neutral-900">Quick Actions</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <a
-                  href="/admin/super"
-                  className="flex items-start space-x-3 p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/30 transition-all"
-                >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
-                    <ClipboardList className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-neutral-900 mb-1">
-                      Review Admin Requests
-                    </h3>
-                    <p className="text-xs text-neutral-600">
-                      Approve or reject pending registrations
-                    </p>
-                  </div>
-                </a>
-                <div className="flex items-start space-x-3 p-4 border border-neutral-200 rounded-lg bg-neutral-50">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-neutral-200 flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-neutral-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-neutral-900 mb-1">
-                      Platform Overview
-                    </h3>
-                    <p className="text-xs text-neutral-600">
-                      {stats?.activeRestaurants || 0} active of{" "}
-                      {stats?.totalRestaurants || 0} total
-                    </p>
-                  </div>
-                </div>
+          {/* Single CTA when there are pending approvals */}
+          {(stats?.pendingRestaurantAdmins ?? 0) > 0 && (
+            <a
+              href="/admin/super"
+              className="flex items-center gap-3 p-4 rounded-xl border-2 border-warning-200 bg-warning-50/50 hover:bg-warning-50 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-xl bg-warning-100 flex items-center justify-center flex-shrink-0">
+                <ClipboardList className="w-6 h-6 text-warning-700" />
               </div>
-            </div>
-          </div>
-
-          {/* Restaurants List */}
-          <div className="bg-white border border-neutral-200 rounded-card shadow-card">
-            <div className="px-6 py-4 border-b border-neutral-200">
-              <h2 className="text-base font-semibold text-neutral-900">All Restaurants</h2>
-            </div>
-            {allRestaurants.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-                  <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
-                </div>
-                <p className="text-sm text-neutral-600">
-                  No restaurants registered yet
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-neutral-900">
+                  {stats?.pendingRestaurantAdmins} request{(stats?.pendingRestaurantAdmins ?? 0) !== 1 ? "s" : ""} awaiting review
                 </p>
+                <p className="text-sm text-neutral-600 mt-0.5">Approve or reject new restaurant signups</p>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="table-professional">
-                  <thead>
-                    <tr>
-                      <th>Restaurant Name</th>
-                      <th>Slug</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-neutral-200">
-                    {allRestaurants.map((restaurant) => (
-                      <tr key={restaurant.id}>
-                        <td>
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center mr-3">
-                              <UtensilsCrossed className="w-4 h-4 text-primary-600" />
-                            </div>
-                            <div className="font-medium text-neutral-900">
-                              {restaurant.name}
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="text-sm text-neutral-600 font-mono">
-                            {restaurant.slug}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              restaurant.isActive
-                                ? "bg-success-50 text-success-700"
-                                : "bg-neutral-100 text-neutral-700"
-                            }`}
-                          >
-                            {restaurant.isActive ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td>
-                          <a
-                            href={`/r/${restaurant.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
-                          >
-                            View Menu →
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              <span className="text-warning-700 font-medium text-sm flex-shrink-0">Review →</span>
+            </a>
+          )}
+
+          {/* Restaurants table */}
+          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50">
+              <h2 className="text-sm font-semibold text-neutral-900">All restaurants</h2>
+              <p className="text-xs text-neutral-500 mt-0.5">Toggle status to activate or deactivate menu</p>
+            </div>
+            <div className="p-4">
+              <SuperAdminRestaurantsTable
+                restaurants={allRestaurants}
+                onActivate={setRestaurantActive}
+                onDeactivate={setRestaurantInactive}
+              />
+            </div>
           </div>
         </div>
       ) : (

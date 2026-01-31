@@ -29,6 +29,8 @@ export default async function MenuPage() {
     );
   }
 
+  // Inactive restaurant: layout shows subscription-expired content
+
   // Get categories with menu items
   const allCategories = await db
     .select()

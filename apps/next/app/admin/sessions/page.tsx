@@ -50,6 +50,8 @@ export default async function SessionsPage() {
       );
     }
 
+    // Inactive restaurant: layout shows subscription-expired content
+
     // Fetch all sessions for this restaurant
     let allSessions: Array<{
       id: string;

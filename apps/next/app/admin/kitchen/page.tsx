@@ -51,6 +51,8 @@ export default async function KitchenPage() {
       );
     }
 
+    // Inactive restaurant: layout shows subscription-expired content
+
     // Get all pending, cooking, ready, and served orders
     let allOrders: Array<{
       id: string;
